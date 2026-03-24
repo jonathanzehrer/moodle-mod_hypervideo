@@ -128,7 +128,11 @@ class hypervideo_services extends base_external {
         // Validate context.
         self::validate_cm_context($data['hypervideo']);
 
-        $videoprogress = $DB->count_records('hypervideo_log', [
+        $select = $DB->sql_compare_text('actions') . ' = :actions'
+            . ' AND course = :course'
+            . ' AND userid = :userid'
+            . ' AND hypervideo = :hypervideo';
+        $videoprogress = $DB->count_records_select('hypervideo_log', $select, [
             'actions' => 'playback',
             'course' => $data['course'],
             'userid' => $USER->id,

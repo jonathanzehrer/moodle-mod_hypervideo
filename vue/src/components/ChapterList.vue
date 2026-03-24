@@ -77,8 +77,7 @@ export default {
 
 <style>
 .hypervideo-chapters {
-  margin-top: 1rem;
-  max-width: 800px;
+  margin-top: 0;
 }
 
 .hypervideo-chapters-heading {

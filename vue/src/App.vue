@@ -5,49 +5,55 @@
     :aria-label="title || $t('aria_videoplayer')"
   >
     <h3 v-if="title" class="hypervideo-title" :id="headingId">{{ title }}</h3>
-    <div class="player-container">
-      <div
-        v-if="videoError"
-        class="hypervideo-error alert alert-danger"
-        role="alert"
-        aria-live="assertive"
-      >
-        {{ $t("player_error") }}
+    <div class="row mt-3">
+      <div v-if="chapters.length" class="col-md-3">
+        <ChapterList
+          :chapters="chapters"
+          :current-time="currentTime"
+          :duration="duration"
+          @seek="seekTo"
+        />
       </div>
-      <div
-        v-if="!videoError && !videoReady"
-        class="hypervideo-loading"
-        aria-live="polite"
-      >
-        <span role="status">{{ $t("player_loading") }}</span>
+      <div :class="chapters.length ? 'col-md-9' : 'col-12'">
+        <div class="player-container">
+          <div
+            v-if="videoError"
+            class="hypervideo-error alert alert-danger"
+            role="alert"
+            aria-live="assertive"
+          >
+            {{ $t("player_error") }}
+          </div>
+          <div
+            v-if="!videoError && !videoReady"
+            class="hypervideo-loading"
+            aria-live="polite"
+          >
+            <span role="status">{{ $t("player_loading") }}</span>
+          </div>
+          <video
+            v-show="!videoError"
+            ref="videoEl"
+            :src="url"
+            controls
+            preload="metadata"
+            class="hypervideo-player"
+            :aria-label="title || $t('aria_videoplayer')"
+            :aria-describedby="headingId"
+            @play="onPlay"
+            @pause="onPause"
+            @loadeddata="onCanPlay"
+            @timeupdate="onTimeUpdate"
+            @seeked="onSeeked"
+            @seeking="onSeeking"
+            @ended="onEnded"
+            @error="onError"
+          >
+            <p>{{ $t("aria_videonotsupported") }}</p>
+          </video>
+        </div>
       </div>
-      <video
-        v-show="!videoError"
-        ref="videoEl"
-        :src="url"
-        controls
-        preload="metadata"
-        class="hypervideo-player"
-        :aria-label="title || $t('aria_videoplayer')"
-        :aria-describedby="headingId"
-        @play="onPlay"
-        @pause="onPause"
-        @loadeddata="onCanPlay"
-        @timeupdate="onTimeUpdate"
-        @seeked="onSeeked"
-        @seeking="onSeeking"
-        @ended="onEnded"
-        @error="onError"
-      >
-        <p>{{ $t("aria_videonotsupported") }}</p>
-      </video>
     </div>
-    <ChapterList
-      :chapters="chapters"
-      :current-time="currentTime"
-      :duration="duration"
-      @seek="seekTo"
-    />
   </div>
 </template>
 
@@ -257,8 +263,6 @@ export default {
 
 .player-container {
   width: 100%;
-  max-width: 800px;
-  margin-top: 30px;
   height: auto;
 }
 

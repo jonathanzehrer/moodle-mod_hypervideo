@@ -71,3 +71,5 @@ export const init = async (
   app.use(i18n);
   app.mount("#app");
 };
+
+export default { init };

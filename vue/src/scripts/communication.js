@@ -1,4 +1,3 @@
-<?php
 // This file is part of Moodle - http://moodle.org/
 //
 // Moodle is free software: you can redistribute it and/or modify
@@ -15,37 +14,40 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Capability definitions for mod_hypervideo.
- *
  * @package    mod_hypervideo
  * @copyright  2024 Niels Seidel <niels.seidel@fernuni-hagen.de>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-defined('MOODLE_INTERNAL') || die();
+import ajax from "core/ajax";
 
-$capabilities = [
+export default class Communication {
+  static setPluginName(name) {
+    Communication.fullName = name;
+  }
 
-    'mod/hypervideo:view' => [
-        'captype' => 'read',
-        'contextlevel' => CONTEXT_MODULE,
-        'archetypes' => [
-            'guest' => CAP_ALLOW,
-            'student' => CAP_ALLOW,
-            'teacher' => CAP_ALLOW,
-            'editingteacher' => CAP_ALLOW,
-            'manager' => CAP_ALLOW,
-        ],
-    ],
-
-    'mod/hypervideo:addinstance' => [
-        'riskbitmask' => RISK_XSS,
-        'captype' => 'write',
-        'contextlevel' => CONTEXT_COURSE,
-        'archetypes' => [
-            'editingteacher' => CAP_ALLOW,
-            'manager' => CAP_ALLOW,
-        ],
-        'clonepermissionsfrom' => 'moodle/course:manageactivities',
-    ],
-];
+  static webservice(method, param = {}) {
+    if (typeof Communication.fullName !== "string") {
+      throw new Error("No plugin name given at communication class.");
+    }
+    return new Promise((resolve, reject) => {
+      ajax.call([
+        {
+          methodname: `${Communication.fullName}_${method}`,
+          args: param ? param : {},
+          timeout: 3000,
+          done: function (data) {
+            return resolve(data);
+          },
+          fail: function (error) {
+            console.error(
+              "Error at Webservice: " + Communication.fullName + "_" + method,
+              error,
+            );
+            return reject(error);
+          },
+        },
+      ]);
+    });
+  }
+}

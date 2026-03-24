@@ -1,44 +1,48 @@
-<?xml version="1.0" encoding="UTF-8" ?>
-<XMLDB PATH="mod/hypervideo/db" VERSION="20171012" COMMENT="XMLDB file for Moodle mod/vuejsdemo"
-       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-       xsi:noNamespaceSchemaLocation="../../../lib/xmldb/xmldb.xsd">
+<?xml version="1.0" encoding="UTF-8"?>
+<XMLDB PATH="mod/hypervideo/db" VERSION="20260324" COMMENT="XMLDB file for Moodle mod/hypervideo"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:noNamespaceSchemaLocation="../../../lib/xmldb/xmldb.xsd">
     <TABLES>
         <TABLE NAME="hypervideo" COMMENT="The hypervideo instances">
             <FIELDS>
-                <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
-                <FIELD NAME="course" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false"/>
-                <FIELD NAME="name" TYPE="char" LENGTH="255" NOTNULL="true" SEQUENCE="false"/>
-                <FIELD NAME="url" TYPE="text" NOTNULL="true" SEQUENCE="false"/>
-                <FIELD NAME="intro" TYPE="text" NOTNULL="false" SEQUENCE="false"/>
-                <FIELD NAME="introformat" TYPE="int" LENGTH="4" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
-                <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
-                <FIELD NAME="timemodified" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+                <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true" />
+                <FIELD NAME="course" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false" />
+                <FIELD NAME="name" TYPE="char" LENGTH="255" NOTNULL="true" SEQUENCE="false" />
+                <FIELD NAME="url" TYPE="text" NOTNULL="true" SEQUENCE="false" />
+                <FIELD NAME="chapters" TYPE="text" NOTNULL="false" SEQUENCE="false" />
+                <FIELD NAME="intro" TYPE="text" NOTNULL="false" SEQUENCE="false" />
+                <FIELD NAME="introformat" TYPE="int" LENGTH="4" NOTNULL="true" DEFAULT="0"
+                    SEQUENCE="false" />
+                <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" />
+                <FIELD NAME="timemodified" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0"
+                    SEQUENCE="false" />
             </FIELDS>
             <KEYS>
-                <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
-                <KEY NAME="course" TYPE="foreign" FIELDS="course" REFTABLE="course" REFFIELDS="id"/>
+                <KEY NAME="primary" TYPE="primary" FIELDS="id" />
+                <KEY NAME="course" TYPE="foreign" FIELDS="course" REFTABLE="course" REFFIELDS="id" />
             </KEYS>
-        </TABLE>   
+        </TABLE>
         <TABLE NAME="hypervideo_log" COMMENT="Log of video interactions and watching behavior">
             <FIELDS>
-                <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
-                <FIELD NAME="hypervideo" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
-                <FIELD NAME="userid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
-                <FIELD NAME="course" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
-                <FIELD NAME="url" TYPE="text" LENGTH="255" NOTNULL="true" SEQUENCE="false"/>
-                <FIELD NAME="context" TYPE="text" LENGTH="255" NOTNULL="true" SEQUENCE="false"/>
-                <FIELD NAME="position" TYPE="text" LENGTH="255" NOTNULL="true" SEQUENCE="false"/>
-                <FIELD NAME="actions" TYPE="text" LENGTH="255" NOTNULL="true" SEQUENCE="false"/>
-                <FIELD NAME="val" TYPE="text" LENGTH="255" NOTNULL="true" SEQUENCE="false"/>
-                <FIELD NAME="duration" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
-                <FIELD NAME="timemodified" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
+                <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true" />
+                <FIELD NAME="hypervideo" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" />
+                <FIELD NAME="userid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" />
+                <FIELD NAME="course" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" />
+                <FIELD NAME="url" TYPE="text" NOTNULL="true" SEQUENCE="false" />
+                <FIELD NAME="context" TYPE="text" NOTNULL="true" SEQUENCE="false" />
+                <FIELD NAME="position" TYPE="text" NOTNULL="true" SEQUENCE="false" />
+                <FIELD NAME="actions" TYPE="text" NOTNULL="true" SEQUENCE="false" />
+                <FIELD NAME="val" TYPE="text" NOTNULL="true" SEQUENCE="false" />
+                <FIELD NAME="duration" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" />
+                <FIELD NAME="timemodified" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" />
             </FIELDS>
             <KEYS>
-                <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
-                <KEY NAME="hypervideo" TYPE="foreign" FIELDS="hypervideo" REFTABLE="hypervideo" REFFIELDS="id"/>
-                <KEY NAME="course" TYPE="foreign" FIELDS="course" REFTABLE="course" REFFIELDS="id"/>
-                <KEY NAME="user" TYPE="foreign" FIELDS="id" REFTABLE="user" REFFIELDS="id"/>
+                <KEY NAME="primary" TYPE="primary" FIELDS="id" />
+                <KEY NAME="hypervideo" TYPE="foreign" FIELDS="hypervideo" REFTABLE="hypervideo"
+                    REFFIELDS="id" />
+                <KEY NAME="course" TYPE="foreign" FIELDS="course" REFTABLE="course" REFFIELDS="id" />
+                <KEY NAME="userid" TYPE="foreign" FIELDS="userid" REFTABLE="user" REFFIELDS="id" />
             </KEYS>
-        </TABLE>       
+        </TABLE>
     </TABLES>
 </XMLDB>

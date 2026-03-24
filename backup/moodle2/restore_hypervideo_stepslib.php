@@ -1,5 +1,4 @@
 <?php
-
 // This file is part of Moodle - http://moodle.org/
 //
 // Moodle is free software: you can redistribute it and/or modify
@@ -16,69 +15,81 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * @package   mod_hypervideo
- * @category  backup
- * @copyright 2010 onwards Eloy Lafuente (stronk7) {@link http://stronk7.com}
- * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * Structure step to restore one hypervideo activity.
+ *
+ * @package    mod_hypervideo
+ * @category   backup
+ * @copyright  2024 Niels Seidel <niels.seidel@fernuni-hagen.de>
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-/**
- * Define all the restore steps that will be used by the restore_hypervideo_activity_task
- */
+defined('MOODLE_INTERNAL') || die;
 
 /**
- * Structure step to restore one hypervideo activity
+ * Structure step to restore one hypervideo activity.
+ *
+ * @package    mod_hypervideo
+ * @category   backup
+ * @copyright  2024 Niels Seidel <niels.seidel@fernuni-hagen.de>
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class restore_hypervideo_activity_structure_step extends restore_activity_structure_step {
 
+    /**
+     * Define the structure for restoring.
+     *
+     * @return array
+     */
     protected function define_structure() {
+        $paths = [];
+        $userinfo = $this->get_setting_value('userinfo');
 
-        $paths = array();
         $paths[] = new restore_path_element('hypervideo', '/activity/hypervideo');
+        if ($userinfo) {
+            $paths[] = new restore_path_element('hypervideo_log', '/activity/hypervideo/hypervideo_log');
+        }
 
-        // Return the paths wrapped into standard activity structure
         return $this->prepare_activity_structure($paths);
     }
 
+    /**
+     * Process the hypervideo element.
+     *
+     * @param array $data Restore data
+     */
     protected function process_hypervideo($data) {
         global $DB;
 
         $data = (object)$data;
         $oldid = $data->id;
         $data->course = $this->get_courseid();
-
-        // Any changes to the list of dates that needs to be rolled should be same during course restore and course reset.
-        // See MDL-9367.
         $data->timecreated = $this->apply_date_offset($data->timecreated);
         $data->timemodified = $this->apply_date_offset($data->timemodified);
 
-        // insert the hypervideo record
         $newitemid = $DB->insert_record('hypervideo', $data);
-        //$this->set_mapping('hypervideo', $oldid, $newitemid, true);
-        // immediately after inserting "activity" record, call this
         $this->apply_activity_instance($newitemid);
     }
+
+    /**
+     * Process the hypervideo_log element.
+     *
+     * @param array $data Restore data
+     */
     protected function process_hypervideo_log($data) {
         global $DB;
 
         $data = (object)$data;
-        $oldid = $data->id;
-
-        // Any changes to the list of dates that needs to be rolled should be same during course restore and course reset.
-        // See MDL-9367.
-        // $data->timecreated = $this->apply_date_offset($data->timecreated);
+        $data->hypervideo = $this->get_new_parentid('hypervideo');
+        $data->userid = $this->get_mappingid('user', $data->userid);
         $data->timemodified = $this->apply_date_offset($data->timemodified);
 
-        // insert the hypervideo record
-        $newitemid = $DB->insert_record('hypervideo_log', $data);
-        $this->set_mapping('hypervideo_log', $oldid, $newitemid, true);
-        // immediately after inserting "activity" record, call this
-        $this->apply_activity_instance($newitemid);
+        $DB->insert_record('hypervideo_log', $data);
     }
-    
 
+    /**
+     * Execute after restore.
+     */
     protected function after_execute() {
-        // Add hypervideo related files, no need to match by itemname (just internally handled context)
         $this->add_related_files('mod_hypervideo', 'intro', null);
     }
 }

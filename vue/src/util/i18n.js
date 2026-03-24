@@ -1,4 +1,3 @@
-<?php
 // This file is part of Moodle - http://moodle.org/
 //
 // Moodle is free software: you can redistribute it and/or modify
@@ -15,37 +14,28 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Capability definitions for mod_hypervideo.
+ * Vue-i18n configuration for mod_hypervideo.
  *
  * @package    mod_hypervideo
  * @copyright  2024 Niels Seidel <niels.seidel@fernuni-hagen.de>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-defined('MOODLE_INTERNAL') || die();
+import { createI18n } from "vue-i18n";
 
-$capabilities = [
+// Resolve dot-separated keys by converting dots to underscores,
+// matching the key transformation applied in view.php.
+const messageResolver = (obj, path) => {
+  const key = path.replace(/\./g, "_");
+  return obj[key];
+};
 
-    'mod/hypervideo:view' => [
-        'captype' => 'read',
-        'contextlevel' => CONTEXT_MODULE,
-        'archetypes' => [
-            'guest' => CAP_ALLOW,
-            'student' => CAP_ALLOW,
-            'teacher' => CAP_ALLOW,
-            'editingteacher' => CAP_ALLOW,
-            'manager' => CAP_ALLOW,
-        ],
-    ],
-
-    'mod/hypervideo:addinstance' => [
-        'riskbitmask' => RISK_XSS,
-        'captype' => 'write',
-        'contextlevel' => CONTEXT_COURSE,
-        'archetypes' => [
-            'editingteacher' => CAP_ALLOW,
-            'manager' => CAP_ALLOW,
-        ],
-        'clonepermissionsfrom' => 'moodle/course:manageactivities',
-    ],
-];
+export const i18n = createI18n({
+  legacy: true,
+  locale: "en",
+  fallbackLocale: "en",
+  messages: {},
+  silentTranslationWarn: true,
+  globalInjection: true,
+  messageResolver,
+});

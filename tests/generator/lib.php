@@ -15,37 +15,39 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Capability definitions for mod_hypervideo.
+ * mod_hypervideo data generator.
  *
  * @package    mod_hypervideo
+ * @category   test
  * @copyright  2024 Niels Seidel <niels.seidel@fernuni-hagen.de>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 defined('MOODLE_INTERNAL') || die();
 
-$capabilities = [
+/**
+ * Hypervideo module data generator class.
+ *
+ * @package    mod_hypervideo
+ * @category   test
+ * @copyright  2024 Niels Seidel <niels.seidel@fernuni-hagen.de>
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+class mod_hypervideo_generator extends testing_module_generator {
+    /**
+     * Create a new instance of the module.
+     *
+     * @param array|null $record
+     * @param array|null $options
+     * @return stdClass
+     */
+    public function create_instance($record = null, array $options = null) {
+        $record = (object)(array)$record;
 
-    'mod/hypervideo:view' => [
-        'captype' => 'read',
-        'contextlevel' => CONTEXT_MODULE,
-        'archetypes' => [
-            'guest' => CAP_ALLOW,
-            'student' => CAP_ALLOW,
-            'teacher' => CAP_ALLOW,
-            'editingteacher' => CAP_ALLOW,
-            'manager' => CAP_ALLOW,
-        ],
-    ],
+        if (!isset($record->url)) {
+            $record->url = 'https://example.com/video.mp4';
+        }
 
-    'mod/hypervideo:addinstance' => [
-        'riskbitmask' => RISK_XSS,
-        'captype' => 'write',
-        'contextlevel' => CONTEXT_COURSE,
-        'archetypes' => [
-            'editingteacher' => CAP_ALLOW,
-            'manager' => CAP_ALLOW,
-        ],
-        'clonepermissionsfrom' => 'moodle/course:manageactivities',
-    ],
-];
+        return parent::create_instance($record, (array)$options);
+    }
+}

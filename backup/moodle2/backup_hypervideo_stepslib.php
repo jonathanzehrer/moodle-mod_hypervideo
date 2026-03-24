@@ -1,5 +1,4 @@
 <?php
-
 // This file is part of Moodle - http://moodle.org/
 //
 // Moodle is free software: you can redistribute it and/or modify
@@ -16,48 +15,64 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * @package   mod_hypervideo
- * @category  backup
- * @copyright 2023 Regina Kasakowskij {regina.kasakowskij@fernuni-hagen.de}
- * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * Define the complete hypervideo structure for backup.
+ *
+ * @package    mod_hypervideo
+ * @category   backup
+ * @copyright  2024 Niels Seidel <niels.seidel@fernuni-hagen.de>
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 defined('MOODLE_INTERNAL') || die;
 
 /**
- * Define all the backup steps that will be used by the backup_hypervideo_activity_task
- */
-
-/**
- * Define the complete hypervideo structure for backup, with file and id annotations
+ * Define the complete hypervideo structure for backup, with file and id annotations.
+ *
+ * @package    mod_hypervideo
+ * @category   backup
+ * @copyright  2024 Niels Seidel <niels.seidel@fernuni-hagen.de>
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class backup_hypervideo_activity_structure_step extends backup_activity_structure_step {
 
+    /**
+     * Define the structure for the hypervideo activity.
+     *
+     * @return backup_nested_element
+     */
     protected function define_structure() {
 
-        // To know if we are including userinfo
+        // To know if we are including userinfo.
         $userinfo = $this->get_setting_value('userinfo');
 
-        // Define each element separated
-        $hypervideo = new backup_nested_element('hypervideo', array('id'), array(
-            'course', 'name', 'url', 'intro', 'introformat',
-            'timecreated', 'timemodified'));
+        // Define each element separated.
+        $hypervideo = new backup_nested_element('hypervideo', ['id'], [
+            'course', 'name', 'url', 'chapters', 'intro', 'introformat',
+            'timecreated', 'timemodified',
+        ]);
 
-        // Define sources
-        $hypervideo->set_source_table('hypervideo', array('id' => backup::VAR_ACTIVITYID));
-
-        
-        $hypervideo_log = new backup_nested_element('hypervideo_log', array('id'), array(
+        $hypervideolog = new backup_nested_element('hypervideo_log', ['id'], [
             'hypervideo', 'userid', 'course', 'url', 'context',
-            'position', 'actions', 'values', 'duration',
-            'timemodified'));
-        $hypervideo_log->set_source_table('hypervideo', array('id' => backup::VAR_ACTIVITYID));
+            'position', 'actions', 'val', 'duration',
+            'timemodified',
+        ]);
 
-        // Define file annotations
-      //  $hypervideo->annotate_files('mod_hypervideo', 'intro', null, null);
+        // Build the tree.
+        $hypervideo->add_child($hypervideolog);
 
-        $hypervideo->add_child($hypervideo_log);
-       
+        // Define sources.
+        $hypervideo->set_source_table('hypervideo', ['id' => backup::VAR_ACTIVITYID]);
+
+        if ($userinfo) {
+            $hypervideolog->set_source_table('hypervideo_log', ['hypervideo' => backup::VAR_PARENTID]);
+        }
+
+        // Define id annotations.
+        $hypervideolog->annotate_ids('user', 'userid');
+
+        // Define file annotations.
+        $hypervideo->annotate_files('mod_hypervideo', 'intro', null);
+
         return $this->prepare_activity_structure($hypervideo);
     }
 }

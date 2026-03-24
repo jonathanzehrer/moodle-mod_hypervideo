@@ -8,12 +8,12 @@
 <br>
 <h1 align="center">Hypervideo</h1>
 
-## *Hypervideo* is a Moodle activity plugin for playing videos and collecting fine-grained playback and clickstream data about video usage
+## _Hypervideo_ is a Moodle activity plugin for playing videos and collecting fine-grained playback and clickstream data about video usage
 
-
-*Hypervideo* (mod_hypervideo) is a ready to use Moodle activity plugin for serving videos loaded from a provided URL. user interactions with the video such as play, pause, seek, playbackspeed, and fullscreen are logged. Also the video playback is captured for every 2 seconds segment that has been played back completely. This fine-grained data collection enables detailed analytics of watching behavior and resource usage.
+_Hypervideo_ (mod_hypervideo) is a ready to use Moodle activity plugin for serving videos loaded from a provided URL. user interactions with the video such as play, pause, seek, playbackspeed, and fullscreen are logged. Also the video playback is captured for every 2 seconds segment that has been played back completely. This fine-grained data collection enables detailed analytics of watching behavior and resource usage.
 
 <!-- development-related badges -->
+
 [![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://github.com/CATALPAresearch/mod_hypervideo/commit-activity)
 [![github latest commit](https://badgen.net/github/last-commit/CATALPAresearch/mod_hypervideo)](https://github.com/CATALPAresearch/mod_hypervideo/commit/)
 [![github contributors](https://badgen.net/github/contributors/CATALPAresearch/mod_hypervideo)](https://github.com/CATALPAresearch/mod_hypervideo/contributors/)
@@ -26,17 +26,16 @@
 ![](https://img.shields.io/badge/node.js-~18.17.0-green)
 ![](https://img.shields.io/badge/vue.js-2-green)
 
-<!-- Maturity-related badges 
+<!-- Maturity-related badges
 see: https://github.com/mkenney/software-guides/blob/master/STABILITY-BADGES.md
 -->
+
 [![stability-mature](https://img.shields.io/badge/stability-mature-008000.svg)](https://github.com/mkenney/software-guides/blob/master/STABILITY-BADGES.md#mature)
 ![](https://img.shields.io/badge/years_in_productive_use-3-darkgreen)
 ![](https://img.shields.io/badge/used_in_unique_courses-3-darkgreen)
 
-
-
 <!-- AI-related and LA-related badges -->
-<!-- 
+<!--
 https://nutrition-facts.ai/
 
 Privacy Ladder Level
@@ -51,6 +50,7 @@ Human in the Loop
 Data Retention
 Compliance
 -->
+
 ![](https://img.shields.io/badge/collects_clickstream_data-yes-blue)
 ![](https://img.shields.io/badge/collects_playback_data-yes-blue)
 ![](https://img.shields.io/badge/collects_scroll_data-no-blue)
@@ -59,9 +59,8 @@ Compliance
 ![](https://img.shields.io/badge/collects_video_data-no-blue)
 ![](https://img.shields.io/badge/data_shared_with_vendor-no-blue)
 
-
-
 <br><br>
+
 <p align="center" hidden>
   
 </p>
@@ -76,27 +75,30 @@ Compliance
   <a href="#license">License</a>
 </p>
 
-
 ## Key Features
 
 **Video player:**
-* Lean HTML 5 video player
-* responsive design for mobile use
-* flash surveys are included
+
+- Lean HTML 5 video player
+- responsive design for mobile use
+- flash surveys are included
+- chapter marks
 
 **Learning Analytics included**
-* collection of clickstream data 
-* capturing playback activities for every 2 seconds segment of the video 
+
+- collection of clickstream data
+- capturing playback activities for every 2 seconds segment of the video
 
 ## Roadmap and Limitations
+
 **Roadmap**
-* Split the db/external.php into distinct servives stored in separated files.
-* add further interactive elements like user defined annotations, comments, highligts
-* add video assessments
-* switch to webpack 5 to reduce the bundle size and speedup transpilation
+
+- add further interactive elements like user defined annotations, comments, highligts
+- add video assessments
 
 **Limitations**
-- *Hypervideo* stores a massive load of log data. 
+
+- _Hypervideo_ stores a massive load of log data.
 
 ## How To Use
 
@@ -132,23 +134,23 @@ $ php admin/cli/upgrade.php
 
 ## Download
 
-You can [download](https://github.com/catalparesearch/mod_hypervideo/releases/tag/latest) the latest installable version of *Hypervideo* for Moodle 3.11.
+You can [download](https://github.com/catalparesearch/mod_hypervideo/releases/tag/latest) the latest installable version of _Hypervideo_ for Moodle 3.11.
 
 ## Getting into Development
-Client-side code is located in the folder vue/. The file view.php contains the root DOM element of the video player. The webservice for accessing Moodle database can be found at db/external.php. 
 
+Client-side code is located in the folder vue/. The file view.php contains the root DOM element of the video player. The webservice for accessing Moodle database can be found at db/external.php.
 
 ## Emailware
 
-*Hypervideo* is an [emailware](https://en.wiktionary.org/wiki/emailware). Meaning, if you liked using this plugin or it has helped you in any way, I'd like you send me an email at <niels.seidel@fernuni-hagen.de> about anything you'd want to say about this software. I'd really appreciate it!
+_Hypervideo_ is an [emailware](https://en.wiktionary.org/wiki/emailware). Meaning, if you liked using this plugin or it has helped you in any way, I'd like you send me an email at <niels.seidel@fernuni-hagen.de> about anything you'd want to say about this software. I'd really appreciate it!
 
 ## Credits
 
 This software uses the following open source packages:
-[vue.js](https://vuejs.org/), 
-[vue core video player]( https://github.com/core-player/vue-core-video-player),
-[vuex](https://vuex.vuejs.org/), 
-[vue-router](https://router.vuejs.org/), 
+[vue.js](https://vuejs.org/),
+[vue core video player](https://github.com/core-player/vue-core-video-player),
+[vuex](https://vuex.vuejs.org/),
+[vue-router](https://router.vuejs.org/),
 [node.js](https://nodejs.org/).
 
 ## Related
@@ -172,7 +174,7 @@ year = {2024}
 
 ## You may also like ...
 
-* [mod_hypercast](https://github.com/nise/mod_hypercast) - Hyperaudio player for course texts supporting audio cues, text2speech conversion, text comments, and collaborative listining experiences 
+* [mod_hypercast](https://github.com/nise/mod_hypercast) - Hyperaudio player for course texts supporting audio cues, text2speech conversion, text comments, and collaborative listining experiences
 * [mod_hypervideo](https//github.com/catalparesearch/mod_hypervideo) - Usenet client for Moodle
 * [mod_usenet](https//github.com/catalparesearch/mod_usenet) - Usenet client for Moodle
 
@@ -190,3 +192,4 @@ year = {2024}
 <a href="https://www.fernuni-hagen.de/"><img src="pix/promotion/fernuni.jpg" width="250" /></a>
 
 
+````

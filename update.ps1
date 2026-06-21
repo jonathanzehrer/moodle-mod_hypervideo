@@ -22,4 +22,4 @@ if ($warningMessage) {
 }
 
 # Update the local repository, install dependencies and build the project
-ssh jonathan@moodle "cd /var/www/moodle/mod/hypervideo && git pull && npm install && npm run build"
+ssh jonathan@moodle "cd /var/www/moodle/mod/hypervideo && git pull personal main && cd vue && npm install && npm run build"

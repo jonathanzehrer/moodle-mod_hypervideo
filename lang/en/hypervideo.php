@@ -24,11 +24,11 @@
 
 $string['aria_videonotsupported'] = 'Your browser does not support embedded video. Please update your browser or use a different one.';
 $string['aria_videoplayer'] = 'Video player';
-$string['chapters'] = 'Chapters (lol)';
+$string['chapters'] = 'Chapters';
 $string['chapters_goto'] = 'Jump to';
 $string['chapters_help'] = 'Enter one chapter per line in the format: time title. For example:\n0:00 Introduction\n2:30 Main topic\n1:05:00 Summary';
 $string['chapters_nav'] = 'Video chapters';
-$string['chapters_title'] = 'Chapters (lol)';
+$string['chapters_title'] = 'Chapters';
 $string['eventvideointeractionlogged'] = 'Video interaction logged';
 $string['hypervideo:addinstance'] = 'Add a new hypervideo';
 $string['hypervideo:view'] = 'View hypervideo';

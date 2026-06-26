@@ -22,11 +22,17 @@
 // eslint-disable-next-line camelcase, no-undef
 __webpack_public_path__ = M.cfg.wwwroot + "/mod/hypervideo/amd/build/";
 
-import App from "./App.vue";
 import { createApp } from "vue";
 import { createStore } from "./store";
 import { i18n } from "./util/i18n";
 import Communication from "./scripts/communication";
+
+/**
+ * Compute the variant number (1-3) from hypervideo id and user id.
+ */
+function computeVariant(hypervideoid, userid) {
+  return ((Number(hypervideoid) || 0) + (Number(userid) || 0)) % 3;
+}
 
 export const init = async (
   coursemoduleid,
@@ -37,8 +43,21 @@ export const init = async (
   url,
   title,
   initialData = null,
+  userid = 0,
 ) => {
   Communication.setPluginName(fullPluginName);
+
+  const variant = computeVariant(hypervideoid, userid);
+
+  // Dynamically load the variant component.
+  let App;
+  if (variant === 0) {
+    App = (await import("./AppVariant1.vue")).default;
+  } else if (variant === 1) {
+    App = (await import("./AppVariant2.vue")).default;
+  } else {
+    App = (await import("./AppVariant3.vue")).default;
+  }
 
   const store = createStore({
     pluginName: fullPluginName,
@@ -46,6 +65,7 @@ export const init = async (
     contextID: Number(contextid),
     courseid: Number(courseid),
     hypervideoid: Number(hypervideoid),
+    userid: Number(userid),
     url: url,
     title: title,
     chapters: initialData && initialData.chapters ? initialData.chapters : [],

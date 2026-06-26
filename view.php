@@ -102,6 +102,7 @@ $PAGE->requires->js_call_amd('mod_hypervideo/app-lazy', 'init', [
     $hypervideo->url,
     format_string($hypervideo->name),
     $initialdata,
+    $USER->id,
 ]);
 
 echo $OUTPUT->footer();

@@ -4,24 +4,28 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Hypervideo – Standalone Test</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" />
   <style>
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      max-width: 900px;
       margin: 0 auto;
       padding: 2rem 1rem;
       background: #f5f5f5;
       color: #333;
     }
-    body.dark { background: #1a1a2e; color: #e0e0e0; }
+    .layout {
+      display: flex;
+      gap: 1.5rem;
+      align-items: flex-start;
+    }
     .controls {
       background: #fff;
       border: 1px solid #ddd;
       border-radius: 8px;
       padding: 1.25rem;
-      margin-bottom: 1.5rem;
+      width: 600px;
+      flex-shrink: 0;
     }
-    body.dark .controls { background: #16213e; border-color: #0f3460; }
     .controls label { display: block; font-weight: 600; margin: 0.5rem 0 0.25rem; }
     .controls input, .controls textarea {
       width: 100%;
@@ -31,10 +35,7 @@
       border: 1px solid #ccc;
       border-radius: 4px;
     }
-    body.dark .controls input,
-    body.dark .controls textarea {
-      background: #0f3460; color: #e0e0e0; border-color: #1a1a2e;
-    }
+
     .controls textarea { font-family: monospace; resize: vertical; }
     .controls button {
       margin-top: 0.75rem;
@@ -47,55 +48,62 @@
       color: #fff;
     }
     .controls button:hover { background: #3a56d4; }
-    .row {
-      display: flex;
-      gap: 0.5rem;
-      flex-wrap: wrap;
-    }
-    .row label { flex: 1; min-width: 150px; }
+    
     #app {
       background: #fff;
       border-radius: 8px;
       padding: 1rem;
+      flex: 1;
+      min-width: 0;
     }
-    body.dark #app { background: #16213e; }
+
   </style>
 </head>
 <body>
-  <h1>Hypervideo – Standalone Test 2</h1>
+  <h1>Hypervideo – Standalone Test</h1>
   <p>
     Use this page to test the video player <strong>without Moodle</strong>.
     Enter a video URL below and click <em>Load Player</em>.
   </p>
 
+  <div class="layout">
   <div class="controls">
     <label for="vid-url">Video URL (MP4 / WebM)</label>
-    <input id="vid-url" type="text"
-           value="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"
-           placeholder="https://example.com/video.mp4" />
+    <input id="vid-url" type="text" value="https://static.journally.app/Kiss_Kiss_2026-05-02.mp4" />
 
-    <div class="row">
+    <div>
       <label for="vid-title">Title</label>
-      <label for="vid-theme">Theme</label>
-    </div>
-    <div class="row">
       <input id="vid-title" type="text" value="Big Buck Bunny" placeholder="My Video" />
-      <select id="vid-theme">
-        <option value="light">Light</option>
-        <option value="dark">Dark</option>
+    </div>
+    <div>
+      <label for="vid-hypervideoid">Hypervideo ID</label>
+      <input id="vid-hypervideoid" type="number" value="1" min="1" />
+    </div>
+    <div>
+      <label for="vid-userid">Moodle User ID</label>
+      <input id="vid-userid" type="number" value="1" min="0" />
+    </div>
+    <div>
+      <label for="vid-variant">Override Variant</label>
+      <select id="vid-variant">
+        <option value="auto">Auto (hypervideo + user id)</option>
+        <option value="1">Variant 1 (blue)</option>
+        <option value="2">Variant 2 (green)</option>
+        <option value="3">Variant 3 (amber)</option>
       </select>
     </div>
 
     <label for="vid-chapters">
       Chapters (one per line, format: <code>mm:ss Title</code> or <code>h:mm:ss Title</code>)
     </label>
-    <textarea id="vid-chapters" rows="4" placeholder="0:00 Introduction&#10;0:30 Main topic&#10;1:00 Conclusion"></textarea>
+    <textarea id="vid-chapters" rows="4">0:00 Introduction&#10;0:10 Main topic&#10;0:20 Conclusion</textarea>
 
     <button id="btn-load">▶ Load Player</button>
     <button id="btn-destroy" style="background:#888;margin-left:0.5rem;">✕ Destroy</button>
   </div>
 
   <div id="app"></div>
+  </div>
 
   <script>
     // Must run before any module loads: main.js references M.cfg.wwwroot at top level.
@@ -106,12 +114,7 @@
 
     const btn = document.getElementById("btn-load");
     const btnDestroy = document.getElementById("btn-destroy");
-    const themeSelect = document.getElementById("vid-theme");
     const appContainer = document.getElementById("app");
-
-    themeSelect.addEventListener("change", () => {
-      document.body.className = themeSelect.value === "dark" ? "dark" : "";
-    });
 
     btn.addEventListener("click", async () => {
       const url = document.getElementById("vid-url").value.trim();
@@ -157,15 +160,27 @@
         chapters_nav: "Video chapters",
       };
 
+      const variantOverride = document.getElementById("vid-variant").value;
+      const hypervideoid = parseInt(document.getElementById("vid-hypervideoid").value, 10) || 1;
+      const userid = parseInt(document.getElementById("vid-userid").value, 10) || 0;
+
+      let effectiveUserid = userid;
+      if (variantOverride !== "auto") {
+        // Force a specific variant by adjusting the user id so the hash lands on it.
+        const target = parseInt(variantOverride, 10) - 1; // 0, 1, or 2
+        effectiveUserid = ((target - (hypervideoid % 3)) + 3) % 3;
+      }
+
       await init(
         1,                 // coursemoduleid (fake)
         1,                 // contextid (fake)
         1,                 // courseid (fake)
-        1,                 // hypervideoid (fake)
+        hypervideoid,      // hypervideoid
         "mod_hypervideo",  // fullPluginName
         url,
         title,
         { chapters, i18nStrings, lang: "en" },
+        effectiveUserid,
       );
 
       console.log("✅ Player loaded. Edit Vue files → HMR updates automatically.");

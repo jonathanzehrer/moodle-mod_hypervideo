@@ -17,7 +17,9 @@
   "scripts": {
     "dev": "cross-env NODE_ENV=development webpack --mode development --progress --config webpack.config.js",
     "watch": "cross-env NODE_ENV=development webpack --mode development --watch --config webpack.config.js",
-    "build": "cross-env NODE_ENV=production webpack --mode production --progress --config webpack.config.js"
+    "build": "cross-env NODE_ENV=production webpack --mode production --progress --config webpack.config.js",
+    "build:standalone": "webpack --mode development --config webpack.standalone.config.js",
+    "dev:standalone": "webpack --mode development --watch --config webpack.standalone.config.js"
   },
   "dependencies": {
     "vue": "^3.4.0",

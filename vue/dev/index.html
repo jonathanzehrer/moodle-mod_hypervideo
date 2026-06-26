@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hypervideo – Standalone Test</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 2rem 1rem;
+      background: #f5f5f5;
+      color: #333;
+    }
+    body.dark { background: #1a1a2e; color: #e0e0e0; }
+    .controls {
+      background: #fff;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 1.25rem;
+      margin-bottom: 1.5rem;
+    }
+    body.dark .controls { background: #16213e; border-color: #0f3460; }
+    .controls label { display: block; font-weight: 600; margin: 0.5rem 0 0.25rem; }
+    .controls input, .controls textarea {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 0.5rem;
+      font-size: 0.95rem;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    body.dark .controls input,
+    body.dark .controls textarea {
+      background: #0f3460; color: #e0e0e0; border-color: #1a1a2e;
+    }
+    .controls textarea { font-family: monospace; resize: vertical; }
+    .controls button {
+      margin-top: 0.75rem;
+      padding: 0.6rem 1.5rem;
+      font-size: 1rem;
+      cursor: pointer;
+      border: none;
+      border-radius: 4px;
+      background: #4361ee;
+      color: #fff;
+    }
+    .controls button:hover { background: #3a56d4; }
+    .row {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+    .row label { flex: 1; min-width: 150px; }
+    #app {
+      background: #fff;
+      border-radius: 8px;
+      padding: 1rem;
+    }
+    body.dark #app { background: #16213e; }
+  </style>
+</head>
+<body>
+  <h1>Hypervideo – Standalone Test</h1>
+  <p>
+    Use this page to test the video player <strong>without Moodle</strong>.
+    Enter a video URL below and click <em>Load Player</em>.
+  </p>
+
+  <div class="controls">
+    <label for="vid-url">Video URL (MP4 / WebM)</label>
+    <input id="vid-url" type="text"
+           value="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"
+           placeholder="https://example.com/video.mp4" />
+
+    <div class="row">
+      <label for="vid-title">Title</label>
+      <label for="vid-theme">Theme</label>
+    </div>
+    <div class="row">
+      <input id="vid-title" type="text" value="Big Buck Bunny" placeholder="My Video" />
+      <select id="vid-theme">
+        <option value="light">Light</option>
+        <option value="dark">Dark</option>
+      </select>
+    </div>
+
+    <label for="vid-chapters">
+      Chapters (one per line, format: <code>mm:ss Title</code> or <code>h:mm:ss Title</code>)
+    </label>
+    <textarea id="vid-chapters" rows="4" placeholder="0:00 Introduction&#10;0:30 Main topic&#10;1:00 Conclusion"></textarea>
+
+    <button id="btn-load">▶ Load Player</button>
+    <button id="btn-destroy" style="background:#888;margin-left:0.5rem;">✕ Destroy</button>
+  </div>
+
+  <div id="app"></div>
+
+  <!-- Must be loaded BEFORE the bundle: main.js references M.cfg.wwwroot at top level -->
+  <script>
+    window.M = { cfg: { wwwroot: "" } };
+  </script>
+  <script src="dist/hypervideo-standalone.js"></script>
+  <script>
+    (function () {
+      var btn = document.getElementById("btn-load");
+      var btnDestroy = document.getElementById("btn-destroy");
+      var themeSelect = document.getElementById("vid-theme");
+
+      // Apply theme.
+      themeSelect.addEventListener("change", function () {
+        document.body.className = this.value === "dark" ? "dark" : "";
+      });
+
+      btn.addEventListener("click", function () {
+        var url = document.getElementById("vid-url").value.trim();
+        var title = document.getElementById("vid-title").value.trim();
+        var chaptersRaw = document.getElementById("vid-chapters").value.trim();
+
+        if (!url) {
+          alert("Please enter a video URL.");
+          return;
+        }
+
+        // Parse chapters (mirrors view.php logic).
+        var chapters = [];
+        if (chaptersRaw) {
+          chaptersRaw.split(/\r?\n/).forEach(function (line) {
+            line = line.trim();
+            if (!line) return;
+            var match = line.match(/^(\d{1,2}(?::\d{2}){1,2})\s+(.+)$/);
+            if (match) {
+              var parts = match[1].split(":").map(Number);
+              var seconds;
+              if (parts.length === 3) {
+                seconds = parts[0] * 3600 + parts[1] * 60 + parts[2];
+              } else {
+                seconds = parts[0] * 60 + parts[1];
+              }
+              chapters.push({ time: seconds, title: match[2] });
+            }
+          });
+        }
+
+        // Reset the app container.
+        document.getElementById("app").innerHTML = '<div id="app"></div>';
+
+        // Build i18n strings (same keys used by the player).
+        var i18nStrings = {
+          aria_videoplayer: "Video player",
+          aria_videonotsupported:
+            "Your browser does not support embedded video. Please update your browser or use a different one.",
+          player_error: "The video could not be loaded. Please check the URL or try again later.",
+          player_loading: "Loading video...",
+          player_videonotavailable: "Video not available",
+          chapters_goto: "Jump to",
+          chapters_nav: "Video chapters",
+        };
+
+        var initialData = {
+          chapters: chapters,
+          i18nStrings: i18nStrings,
+          lang: "en",
+        };
+
+        // Call the init function exposed by the UMD bundle.
+        if (typeof Hypervideo !== "undefined") {
+          Hypervideo.init(
+            1,                   // coursemoduleid (fake)
+            1,                   // contextid (fake)
+            1,                   // courseid (fake)
+            1,                   // hypervideoid (fake)
+            "mod_hypervideo",    // fullPluginName
+            url,
+            title,
+            initialData
+          );
+        } else {
+          // In case the bundle hasn't loaded yet.
+          window.addEventListener("load", function () {
+            Hypervideo.init(1, 1, 1, 1, "mod_hypervideo", url, title, initialData);
+          });
+        }
+      });
+
+      btnDestroy.addEventListener("click", function () {
+        document.getElementById("app").innerHTML = '<div id="app"></div>';
+        console.log("Player destroyed. Click 'Load Player' to restart.");
+      });
+    })();
+  </script>
+</body>
+</html>

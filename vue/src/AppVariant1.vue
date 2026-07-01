@@ -6,16 +6,10 @@
   >
     <h3 v-if="title" class="hypervideo-title" :id="headingId">{{ title }}</h3>
     <div class="row mt-3">
-      <div v-if="chapters.length" class="col-md-3">
-        <ChapterList
-          :chapters="chapters"
-          :current-time="currentTime"
-          :duration="duration"
-          @seek="seekTo"
-        />
-      </div>
-      <div :class="chapters.length ? 'col-md-9' : 'col-12'">
+      <div class="col-12">
         <div class="player-container">
+
+          <!-- Player error -->
           <div
             v-if="videoError"
             class="hypervideo-error alert alert-danger"
@@ -24,6 +18,8 @@
           >
             {{ $t("player_error") }}
           </div>
+
+          <!-- Player loading -->
           <div
             v-if="!videoError && !videoReady"
             class="hypervideo-loading"
@@ -31,11 +27,13 @@
           >
             <span role="status">{{ $t("player_loading") }}</span>
           </div>
+
+
           <video
             v-show="!videoError"
             ref="videoEl"
             :src="url"
-            controls
+
             preload="metadata"
             class="hypervideo-player"
             :aria-label="title || $t('aria_videoplayer')"
@@ -51,6 +49,44 @@
           >
             <p>{{ $t("aria_videonotsupported") }}</p>
           </video>
+
+          <div class="video-controls" v-if="videoReady && !videoError">
+            <button
+              class="btn btn-playpause"
+              @click="handlePlayClick"
+              :title="hasEnded ? $t('rewatch') : (isPaused ? $t('play') : $t('pause'))"
+            >
+              <span v-if="hasEnded" class="material-symbols">replay</span>
+              <span v-else-if="isPaused" class="material-symbols">play_arrow</span>
+              <span v-else class="material-symbols">pause</span>
+            </button>
+
+            <span class="video-time">{{ formatTime(currentTime) }}</span>
+            <span class="seekbar-wrapper">
+              <span class="seekbar-visual">
+                <div class="seekbar-fill" :style="{ width: video && video.duration > 0 ? (currentTime / video.duration * 100) + '%' : '0%' }"></div>
+              </span>
+              <input type="range"
+                class="seekbar-input"
+                :min="0"
+                :max="video.duration"
+                step="1"
+                v-model="currentTime"
+                @input="seekTo(currentTime)"
+                aria-label="Video seekbar"
+              />
+            </span>
+            <span class="video-time">{{ formatTime(video.duration) }}</span>
+            <button
+              class="btn btn-fullscreen"
+              @click="toggleFullscreen"
+              :title="isFullscreen ? $t('exit_fullscreen') : $t('fullscreen')"
+            >
+              <span v-if="!isFullscreen" class="material-symbols">fullscreen</span>
+              <span v-else class="material-symbols">fullscreen_exit</span>
+            </button>
+
+          </div>
         </div>
         <div class="variant-indicator variant-1">
           You are looking at variant 1
@@ -60,7 +96,7 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
 import Logger from "./scripts/logger";
 import Communication from "./scripts/communication";
 import ChapterList from "./components/ChapterList.vue";
@@ -69,7 +105,25 @@ export default {
   components: {
     ChapterList,
   },
-  data() {
+  data() : {
+      video: HTMLVideoElement | null;
+      seekStart: number;
+      videoid: number;
+      videoprogress: number;
+      duration: number;
+      interval: number;
+      lastposition: number;
+      timer: ReturnType<typeof setInterval> | null;
+      logger: Logger | null;
+      videoError: boolean;
+      videoReady: boolean;
+      headingId: string;
+      currentTime: number;
+      isSeeking: boolean;
+      isPaused: boolean;
+      isFullscreen: boolean;
+      hasEnded: boolean;
+    } {
     return {
       video: null,
       seekStart: 0,
@@ -85,7 +139,10 @@ export default {
       headingId: "",
       currentTime: 0,
       isSeeking: false,
-    };
+      isPaused: true,
+      isFullscreen: false,
+      hasEnded: false,
+    }
   },
   computed: {
     url() {
@@ -99,6 +156,7 @@ export default {
     },
   },
   mounted() {
+    document.addEventListener("fullscreenchange", this.onFullscreenChange);
     this.headingId = "hypervideo-title-" + Math.floor(Math.random() * 10000);
     this.videoid = "videoid" + Math.floor(Math.random() * 1000);
     this.logger = new Logger(
@@ -114,6 +172,7 @@ export default {
     this.getVideoProgress();
   },
   beforeUnmount() {
+    document.removeEventListener("fullscreenchange", this.onFullscreenChange);
     if (this.timer) {
       clearInterval(this.timer);
       this.timer = null;
@@ -136,6 +195,7 @@ export default {
       this.video = this.$refs.videoEl;
       this.video.setAttribute("id", this.videoid);
       this.videoReady = true;
+      this.duration = this.video.duration;
     },
     onTimeUpdate() {
       if (this.video) {
@@ -165,6 +225,8 @@ export default {
     },
     onPlay() {
       this.video = this.$refs.videoEl;
+      this.isPaused = false;
+      this.hasEnded = false;
       this.log("play", {
         context: "player",
         action: "play",
@@ -182,6 +244,7 @@ export default {
       if (!this.video) {
         return;
       }
+      this.isPaused = true;
       this.log("pause", {
         context: "player",
         action: "pause",
@@ -239,6 +302,8 @@ export default {
       if (!this.video) {
         return;
       }
+      this.hasEnded = true;
+      this.isPaused = true;
       this.log("ended", {
         context: "player",
         action: "ended",
@@ -249,6 +314,38 @@ export default {
       clearInterval(this.timer);
       this.timer = null;
       this.loop();
+    },
+    handlePlayClick() {
+      if (this.hasEnded) {
+        this.video.currentTime = 0;
+        this.video.play();
+      } else if (this.isPaused) {
+        this.video.play();
+      } else {
+        this.video.pause();
+      }
+    },
+    toggleFullscreen() {
+      const el = this.$el.querySelector(".player-container");
+      if (!document.fullscreenElement) {
+        el.requestFullscreen().catch(() => {});
+        this.isFullscreen = true;
+      } else {
+        document.exitFullscreen().catch(() => {});
+        this.isFullscreen = false;
+      }
+    },
+    formatTime(seconds) {
+      if (isNaN(seconds) || seconds === Infinity || seconds === 0) {
+        return "0:00";
+      }
+      const s = Math.floor(seconds);
+      const m = Math.floor(s / 60);
+      const sec = s % 60;
+      return `${m}:${sec.toString().padStart(2, "0")}`;
+    },
+    onFullscreenChange() {
+      this.isFullscreen = !!document.fullscreenElement;
     },
     log(key, values) {
       if (this.logger) {
@@ -265,8 +362,10 @@ export default {
 }
 
 .player-container {
-  width: 100%;
-  height: auto;
+  /* TODO: Warum limitiert das die Breite? */
+  width: fit-content;
+
+  position: relative;
 }
 
 .hypervideo-title {
@@ -278,8 +377,10 @@ export default {
 }
 
 .hypervideo-player {
+  /* TODO: Seitenverhältnis beibehalten */
   width: 100%;
-  height: auto;
+  height: 100%;
+  display: block;
 }
 
 .variant-indicator {
@@ -295,5 +396,119 @@ export default {
   background: #dbeafe;
   color: #1e40af;
   border: 1px solid #93c5fd;
+}
+
+.video-controls {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+
+  display: flex;
+  gap: 5px;
+  padding: 5px;
+  align-items: center;
+
+  background-color: #eee8;
+}
+
+.seekbar-wrapper {
+  flex: 1;
+  position: relative;
+  height: 24px;
+  margin: 0 8px;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+.seekbar-visual {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 6px;
+  transform: translateY(-50%);
+  pointer-events: none;
+  background: #ccc;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.seekbar-fill {
+  height: 6px;
+  background-color: #4a90d9;
+  border-radius: 3px;
+  transition: width 0.2s linear;
+}
+
+.seekbar-input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+  z-index: 1;
+}
+
+.seekbar-input:focus-visible {
+  outline: none;
+}
+
+/* Show a visible focus ring around the wrapper when the input is focused via keyboard */
+.seekbar-input:focus-visible ~ .seekbar-visual {
+  outline: 2px solid #86b7fe;
+  outline-offset: 4px;
+  border-radius: 3px;
+}
+
+.video-time {
+  font-size: 0.85rem;
+  font-family: monospace;
+  color: #333;
+  min-width: 3.5rem;
+  text-align: center;
+  user-select: none;
+}
+
+.btn-fullscreen,
+.btn-playpause {
+  background: none;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 1rem;
+  line-height: 1;
+  padding: 4px 10px;
+  color: #555;
+  transition: background 0.15s, color 0.15s;
+}
+
+.btn-playpause {
+  margin-right: 2px;
+  line-height: 0;
+}
+
+.btn-fullscreen {
+  margin-left: auto;
+  line-height: 0;
+}
+
+.btn-fullscreen:hover,
+.btn-playpause:hover,
+.btn-fullscreen:focus-visible,
+.btn-playpause:focus-visible {
+  background: #e9ecef;
+  color: #222;
+  outline: none;
+}
+
+.btn-fullscreen:focus-visible,
+.btn-playpause:focus-visible {
+  box-shadow: 0 0 0 2px #86b7fe;
 }
 </style>

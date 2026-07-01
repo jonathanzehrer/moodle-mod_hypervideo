@@ -26,6 +26,8 @@ import { createApp } from "vue";
 import { createStore } from "./store";
 import { i18n } from "./util/i18n";
 import Communication from "./scripts/communication";
+import "@fontsource-variable/material-symbols-rounded/standard.css";
+import "./styles/icons.css";
 
 /**
  * Compute the variant number (1-3) from hypervideo id and user id.

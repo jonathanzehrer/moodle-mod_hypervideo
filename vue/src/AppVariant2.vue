@@ -7,7 +7,7 @@
     <h3 v-if="title" class="hypervideo-title" :id="headingId">{{ title }}</h3>
     <div class="row mt-3">
       <div v-if="chapters.length" class="col-md-3">
-        <ChapterList
+        <ChapterSidebar
           :chapters="chapters"
           :current-time="currentTime"
           :duration="duration"
@@ -42,12 +42,12 @@
 import Logger from "./scripts/logger";
 import Communication from "./scripts/communication";
 import VideoPlayer from "./components/VideoPlayer.vue";
-import ChapterList from "./components/ChapterList.vue";
+import ChapterSidebar from "./components/ChapterSidebar.vue";
 
 export default {
   components: {
     VideoPlayer,
-    ChapterList,
+    ChapterSidebar,
   },
   data() {
     return {

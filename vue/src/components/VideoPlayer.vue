@@ -50,10 +50,10 @@
         <span v-else class="material-symbols">pause</span>
       </button>
 
-      <span class="video-time">{{ formatTime(currentTime) }}</span>
+      <span class="video-time">{{ formatTime(displayedCurrentTime) }}</span>
       <span class="seekbar-wrapper" @mousemove="onSeekbarHover" @mouseleave="onSeekbarLeave">
         <span class="seekbar-visual">
-          <div class="seekbar-fill" :style="{ width: video && video.duration > 0 ? (currentTime / video.duration * 100) + '%' : '0%' }"></div>
+          <div class="seekbar-fill" :style="{ width: video && video.duration > 0 && effectiveMax > effectiveMin ? ((currentTime - effectiveMin) / (effectiveMax - effectiveMin) * 100) + '%' : '0%' }"></div>
           <div v-if="displayChapters.length" class="seekbar-chapters">
             <div
               v-for="(ch, index) in displayChapters"
@@ -75,15 +75,15 @@
         </transition>
         <input type="range"
           class="seekbar-input"
-          :min="0"
-          :max="video ? video.duration : 0"
+          :min="effectiveMin"
+          :max="effectiveMax"
           step="1"
           v-model="currentTime"
           @input="seekTo(currentTime)"
           aria-label="Video seekbar"
         />
       </span>
-      <span class="video-time">{{ formatTime(video ? video.duration : 0) }}</span>
+      <span class="video-time">{{ formatTime(displayedDuration) }}</span>
       <button
         class="btn btn-fullscreen"
         @click="toggleFullscreen"
@@ -114,6 +114,10 @@ export default {
     chapters: {
       type: Array,
       default: () => [],
+    },
+    range: {
+      type: Object,
+      default: null,
     },
   },
   emits: [
@@ -159,6 +163,28 @@ export default {
     }
   },
   computed: {
+    effectiveMin() {
+      return this.range ? this.range.start : 0;
+    },
+    effectiveMax() {
+      if (!this.video || !this.video.duration) return 0;
+      if (this.range && this.range.end != null) {
+        return Math.min(this.range.end, this.video.duration);
+      }
+      return this.video.duration;
+    },
+    displayedCurrentTime() {
+      if (this.range) {
+        return Math.max(0, this.currentTime - this.effectiveMin);
+      }
+      return this.currentTime;
+    },
+    displayedDuration() {
+      if (this.range) {
+        return this.effectiveMax - this.effectiveMin;
+      }
+      return this.effectiveMax;
+    },
     displayChapters() {
       if (!this.chapters || !this.chapters.length || !this.video) return [];
       const duration = this.video.duration;
@@ -175,6 +201,18 @@ export default {
       });
     },
   },
+  watch: {
+    range: {
+      handler(newRange) {
+        if (newRange && this.video && this.videoReady) {
+          this.video.currentTime = newRange.start;
+          this.currentTime = newRange.start;
+          this.hasEnded = false;
+        }
+      },
+      deep: true,
+    },
+  },
   methods: {
     setInitialProgress(videoprogressValue) {
       this.videoprogress = parseInt(videoprogressValue * this.interval, 10);
@@ -184,10 +222,25 @@ export default {
       this.video.setAttribute("id", this.videoid);
       this.videoReady = true;
       this.duration = this.video.duration;
+      if (this.range && this.range.start > 0) {
+        this.video.currentTime = this.range.start;
+        this.currentTime = this.range.start;
+      }
       this.$emit('ready', { duration: this.duration });
     },
     onTimeUpdate() {
       if (this.video) {
+        if (this.range) {
+          if (this.video.currentTime < this.range.start) {
+            this.video.currentTime = this.range.start;
+          }
+          if (this.range.end != null && this.video.currentTime >= this.range.end) {
+            this.video.currentTime = this.range.end;
+            this.video.pause();
+            this.onEnded();
+            return;
+          }
+        }
         if (!this.isSeeking) {
           this.seekStart = this.video.currentTime;
         }
@@ -250,6 +303,12 @@ export default {
       this.isSeeking = true;
     },
     seekTo(time) {
+      if (this.range) {
+        time = Math.max(this.range.start, time);
+        if (this.range.end != null) {
+          time = Math.min(this.range.end, time);
+        }
+      }
       if (this.video) {
         this.video.currentTime = time;
         this.currentTime = time;
@@ -307,7 +366,7 @@ export default {
     },
     handlePlayClick() {
       if (this.hasEnded) {
-        this.video.currentTime = 0;
+        this.video.currentTime = this.range ? this.range.start : 0;
         this.video.play();
       } else if (this.isPaused) {
         this.video.play();
@@ -344,7 +403,7 @@ export default {
       }
       const rect = e.currentTarget.getBoundingClientRect();
       const ratio = (e.clientX - rect.left) / rect.width;
-      const timeAtCursor = ratio * this.video.duration;
+      const timeAtCursor = this.effectiveMin + ratio * (this.effectiveMax - this.effectiveMin);
 
       for (let i = 0; i < this.displayChapters.length; i++) {
         const ch = this.displayChapters[i];

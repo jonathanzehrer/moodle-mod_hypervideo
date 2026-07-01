@@ -7,19 +7,21 @@
     <h3 v-if="title" class="hypervideo-title" :id="headingId">{{ title }}</h3>
     <div class="row mt-3">
       <div v-if="chapters.length" class="col-md-3">
-        <ChapterList
+        <ChapterOverview
           :chapters="chapters"
           :current-time="currentTime"
           :duration="duration"
-          @seek="seekTo"
+          @seek="onChapterSeek"
         />
       </div>
       <div :class="chapters.length ? 'col-md-9' : 'col-12'">
         <VideoPlayer
+          v-if="range"
           ref="videoPlayer"
           :url="url"
           :title="title"
           :heading-id="headingId"
+          :range="range"
           @play="onPlayerPlay"
           @pause="onPlayerPause"
           @seeked="onPlayerSeeked"
@@ -29,6 +31,9 @@
           @timeupdate="onPlayerTimeUpdate"
           @ready="onPlayerReady"
         />
+        <div v-if="!range" class="chapter-placeholder">
+          Select a chapter to start watching
+        </div>
         <div class="variant-indicator variant-3">
           You are looking at variant 3
         </div>
@@ -41,12 +46,12 @@
 import Logger from "./scripts/logger";
 import Communication from "./scripts/communication";
 import VideoPlayer from "./components/VideoPlayer.vue";
-import ChapterList from "./components/ChapterList.vue";
+import ChapterOverview from "./components/ChapterOverview.vue";
 
 export default {
   components: {
     VideoPlayer,
-    ChapterList,
+    ChapterOverview,
   },
   data() {
     return {
@@ -54,6 +59,7 @@ export default {
       headingId: "",
       currentTime: 0,
       duration: 0,
+      range: null,
     };
   },
   computed: {
@@ -96,10 +102,13 @@ export default {
         }
       }
     },
-    seekTo(time) {
-      if (this.$refs.videoPlayer) {
-        this.$refs.videoPlayer.seekTo(time);
-      }
+    onChapterSeek(time) {
+      const idx = this.chapters.findIndex(ch => ch.time === time);
+      if (idx === -1) return;
+      const start = time;
+      const nextChapter = this.chapters[idx + 1];
+      const end = nextChapter ? nextChapter.time : null;
+      this.range = { start, end };
     },
     onPlayerPlay(details) {
       this.log("play", details);
@@ -125,6 +134,9 @@ export default {
     },
     onPlayerReady({ duration }) {
       this.duration = duration;
+      if (this.range && this.range.end == null) {
+        this.range = { ...this.range, end: duration };
+      }
     },
     log(key, values) {
       if (this.logger) {
@@ -156,6 +168,18 @@ export default {
 .hypervideo-player {
   width: 100%;
   height: auto;
+}
+
+.chapter-placeholder {
+  padding: 2rem;
+  text-align: center;
+  color: #666;
+  border: 2px dashed #ccc;
+  border-radius: 8px;
+  min-height: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .variant-indicator {

@@ -15,43 +15,20 @@
         />
       </div>
       <div :class="chapters.length ? 'col-md-9' : 'col-12'">
-        <div class="player-container">
-          <div
-            v-if="videoError"
-            class="hypervideo-error alert alert-danger"
-            role="alert"
-            aria-live="assertive"
-          >
-            {{ $t("player_error") }}
-          </div>
-          <div
-            v-if="!videoError && !videoReady"
-            class="hypervideo-loading"
-            aria-live="polite"
-          >
-            <span role="status">{{ $t("player_loading") }}</span>
-          </div>
-          <video
-            v-show="!videoError"
-            ref="videoEl"
-            :src="url"
-            controls
-            preload="metadata"
-            class="hypervideo-player"
-            :aria-label="title || $t('aria_videoplayer')"
-            :aria-describedby="headingId"
-            @play="onPlay"
-            @pause="onPause"
-            @loadeddata="onCanPlay"
-            @timeupdate="onTimeUpdate"
-            @seeked="onSeeked"
-            @seeking="onSeeking"
-            @ended="onEnded"
-            @error="onError"
-          >
-            <p>{{ $t("aria_videonotsupported") }}</p>
-          </video>
-        </div>
+        <VideoPlayer
+          ref="videoPlayer"
+          :url="url"
+          :title="title"
+          :heading-id="headingId"
+          @play="onPlayerPlay"
+          @pause="onPlayerPause"
+          @seeked="onPlayerSeeked"
+          @ended="onPlayerEnded"
+          @playback="onPlayerPlayback"
+          @chapter-seek="onPlayerChapterSeek"
+          @timeupdate="onPlayerTimeUpdate"
+          @ready="onPlayerReady"
+        />
         <div class="variant-indicator variant-2">
           You are looking at variant 2
         </div>
@@ -63,28 +40,20 @@
 <script>
 import Logger from "./scripts/logger";
 import Communication from "./scripts/communication";
+import VideoPlayer from "./components/VideoPlayer.vue";
 import ChapterList from "./components/ChapterList.vue";
 
 export default {
   components: {
+    VideoPlayer,
     ChapterList,
   },
   data() {
     return {
-      video: null,
-      seekStart: 0,
-      videoid: 0,
-      videoprogress: 0,
-      duration: 0,
-      interval: 2,
-      lastposition: -1,
-      timer: null,
       logger: null,
-      videoError: false,
-      videoReady: false,
       headingId: "",
       currentTime: 0,
-      isSeeking: false,
+      duration: 0,
     };
   },
   computed: {
@@ -100,7 +69,6 @@ export default {
   },
   mounted() {
     this.headingId = "hypervideo-title-" + Math.floor(Math.random() * 10000);
-    this.videoid = "videoid" + Math.floor(Math.random() * 1000);
     this.logger = new Logger(
       this.$store.state.courseid,
       this.$store.state.hypervideoid,
@@ -113,12 +81,6 @@ export default {
     this.logger.init();
     this.getVideoProgress();
   },
-  beforeUnmount() {
-    if (this.timer) {
-      clearInterval(this.timer);
-      this.timer = null;
-    }
-  },
   methods: {
     async getVideoProgress() {
       const response = await Communication.webservice("get_video_progress", {
@@ -129,126 +91,40 @@ export default {
       });
       if (response.success) {
         const parsed = JSON.parse(response.data);
-        this.videoprogress = parseInt(parsed.videoprogress * this.interval, 10);
-      }
-    },
-    onCanPlay() {
-      this.video = this.$refs.videoEl;
-      this.video.setAttribute("id", this.videoid);
-      this.videoReady = true;
-    },
-    onTimeUpdate() {
-      if (this.video) {
-        if (!this.isSeeking) {
-          this.seekStart = this.video.currentTime;
+        if (this.$refs.videoPlayer) {
+          this.$refs.videoPlayer.setInitialProgress(parsed.videoprogress);
         }
-        this.currentTime = this.video.currentTime;
       }
-    },
-    loop() {
-      if (!this.video) {
-        return;
-      }
-      const curr = this.video.currentTime || 0;
-      const currentinterval = curr > 0 ? Math.round(curr / this.interval) : 0;
-      if (currentinterval !== this.lastposition) {
-        this.log("playback", {
-          context: "player",
-          action: "playback",
-          values: currentinterval,
-          currenttime: this.video.currentTime,
-          duration: this.video.duration,
-        });
-        this.videoprogress += this.interval;
-        this.lastposition = currentinterval;
-      }
-    },
-    onPlay() {
-      this.video = this.$refs.videoEl;
-      this.log("play", {
-        context: "player",
-        action: "play",
-        values: "",
-        currenttime: this.video.currentTime,
-        duration: this.video.duration,
-      });
-      if (this.timer) {
-        clearInterval(this.timer);
-      }
-      this.timer = setInterval(this.loop, this.interval * 1000);
-      setTimeout(this.loop, 100);
-    },
-    onPause() {
-      if (!this.video) {
-        return;
-      }
-      this.log("pause", {
-        context: "player",
-        action: "pause",
-        values: "",
-        currenttime: this.video.currentTime,
-        duration: this.video.duration,
-      });
-      clearInterval(this.timer);
-      this.timer = null;
-      this.loop();
-    },
-    onSeeking() {
-      this.isSeeking = true;
     },
     seekTo(time) {
-      if (this.video) {
-        this.video.currentTime = time;
-        this.currentTime = time;
-        this.log("chapter-seek", {
-          context: "player",
-          action: "chapter-seek",
-          values: time,
-          currenttime: time,
-          duration: this.video.duration,
-        });
+      if (this.$refs.videoPlayer) {
+        this.$refs.videoPlayer.seekTo(time);
       }
     },
-    onError() {
-      this.videoError = true;
+    onPlayerPlay(details) {
+      this.log("play", details);
     },
-    onSeeked() {
-      if (!this.video) {
-        return;
-      }
-      const from = this.seekStart;
-      const to = this.video.currentTime;
-      const distance = to - from;
-      const direction = distance >= 0 ? "forward" : "backward";
-      this.log("seeked", {
-        context: "player",
-        action: "seeked",
-        values: JSON.stringify({
-          from: from,
-          to: to,
-          distance: distance,
-          direction: direction,
-        }),
-        currenttime: this.video.currentTime,
-        duration: this.video.duration,
-      });
-      this.seekStart = this.video.currentTime;
-      this.isSeeking = false;
+    onPlayerPause(details) {
+      this.log("pause", details);
     },
-    onEnded() {
-      if (!this.video) {
-        return;
-      }
-      this.log("ended", {
-        context: "player",
-        action: "ended",
-        values: "",
-        currenttime: this.video.currentTime,
-        duration: this.video.duration,
-      });
-      clearInterval(this.timer);
-      this.timer = null;
-      this.loop();
+    onPlayerSeeked(details) {
+      this.log("seeked", details);
+    },
+    onPlayerEnded(details) {
+      this.log("ended", details);
+    },
+    onPlayerPlayback(details) {
+      this.log("playback", details);
+    },
+    onPlayerChapterSeek(details) {
+      this.log("chapter-seek", details);
+    },
+    onPlayerTimeUpdate({ currentTime, duration }) {
+      this.currentTime = currentTime;
+      this.duration = duration;
+    },
+    onPlayerReady({ duration }) {
+      this.duration = duration;
     },
     log(key, values) {
       if (this.logger) {

@@ -20,6 +20,7 @@
           :url="url"
           :title="title"
           :heading-id="headingId"
+          :chapters="chapters"
           @play="onPlayerPlay"
           @pause="onPlayerPause"
           @seeked="onPlayerSeeked"

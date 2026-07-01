@@ -51,10 +51,28 @@
       </button>
 
       <span class="video-time">{{ formatTime(currentTime) }}</span>
-      <span class="seekbar-wrapper">
+      <span class="seekbar-wrapper" @mousemove="onSeekbarHover" @mouseleave="onSeekbarLeave">
         <span class="seekbar-visual">
           <div class="seekbar-fill" :style="{ width: video && video.duration > 0 ? (currentTime / video.duration * 100) + '%' : '0%' }"></div>
+          <div v-if="displayChapters.length" class="seekbar-chapters">
+            <div
+              v-for="(ch, index) in displayChapters"
+              :key="index"
+              class="seekbar-chapter"
+              :class="'seekbar-chapter--' + (index % 2 === 0 ? 'even' : 'odd')"
+              :style="{ left: ch.startPercent + '%', width: ch.widthPercent + '%' }"
+            ></div>
+          </div>
         </span>
+        <transition name="tooltip-fade">
+          <span
+            v-if="hoveredChapter"
+            class="seekbar-chapter-tooltip"
+            :style="{ left: hoveredChapterX + 'px' }"
+          >
+            {{ hoveredChapter }}
+          </span>
+        </transition>
         <input type="range"
           class="seekbar-input"
           :min="0"
@@ -93,6 +111,10 @@ export default {
       type: String,
       default: '',
     },
+    chapters: {
+      type: Array,
+      default: () => [],
+    },
   },
   emits: [
     'play',
@@ -121,6 +143,8 @@ export default {
       isPaused: true,
       isFullscreen: false,
       hasEnded: false,
+      hoveredChapter: null,
+      hoveredChapterX: 0,
     };
   },
   mounted() {
@@ -133,6 +157,23 @@ export default {
       clearInterval(this.timer);
       this.timer = null;
     }
+  },
+  computed: {
+    displayChapters() {
+      if (!this.chapters || !this.chapters.length || !this.video) return [];
+      const duration = this.video.duration;
+      if (!duration || duration <= 0) return [];
+
+      const sorted = [...this.chapters].sort((a, b) => a.time - b.time);
+
+      return sorted.map((ch, i) => {
+        const start = Math.max(0, ch.time);
+        const end = i < sorted.length - 1 ? sorted[i + 1].time : duration;
+        const startPercent = (start / duration) * 100;
+        const widthPercent = ((end - start) / duration) * 100;
+        return { ...ch, start, end, startPercent, widthPercent };
+      });
+    },
   },
   methods: {
     setInitialProgress(videoprogressValue) {
@@ -296,6 +337,28 @@ export default {
     onFullscreenChange() {
       this.isFullscreen = !!document.fullscreenElement;
     },
+    onSeekbarHover(e) {
+      if (!this.displayChapters.length) {
+        this.hoveredChapter = null;
+        return;
+      }
+      const rect = e.currentTarget.getBoundingClientRect();
+      const ratio = (e.clientX - rect.left) / rect.width;
+      const timeAtCursor = ratio * this.video.duration;
+
+      for (let i = 0; i < this.displayChapters.length; i++) {
+        const ch = this.displayChapters[i];
+        if (timeAtCursor >= ch.start && timeAtCursor < ch.end) {
+          this.hoveredChapter = ch.title;
+          this.hoveredChapterX = e.clientX - rect.left;
+          return;
+        }
+      }
+      this.hoveredChapter = null;
+    },
+    onSeekbarLeave() {
+      this.hoveredChapter = null;
+    },
   },
 };
 </script>
@@ -379,6 +442,56 @@ export default {
   outline: 2px solid #86b7fe;
   outline-offset: 4px;
   border-radius: 3px;
+}
+
+.seekbar-chapters {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.seekbar-chapter {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  border-right: 2px solid rgba(0, 0, 0, 0.3);
+  pointer-events: none;
+}
+
+.seekbar-chapter:last-child {
+  border-right: none;
+}
+
+.seekbar-chapter--even {
+  background: rgba(74, 144, 217, 0.08);
+}
+
+.seekbar-chapter--odd {
+  background: rgba(74, 144, 217, 0.18);
+}
+
+.seekbar-chapter-tooltip {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  transform: translateX(-50%);
+  background: #333;
+  color: #fff;
+  font-size: 0.75rem;
+  padding: 4px 8px;
+  border-radius: 4px;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 10;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.tooltip-fade-enter-active,
+.tooltip-fade-leave-active {
+  transition: opacity 0.15s ease;
+}
+.tooltip-fade-enter-from,
+.tooltip-fade-leave-to {
+  opacity: 0;
 }
 
 .video-time {

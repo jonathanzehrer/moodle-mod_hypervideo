@@ -27,6 +27,7 @@
       class="hypervideo-player"
       :aria-label="title || $t('aria_videoplayer')"
       :aria-describedby="headingId"
+      @click="handlePlayClick"
       @play="onPlay"
       @pause="onPause"
       @loadeddata="onCanPlay"
@@ -84,6 +85,29 @@
         />
       </span>
       <span class="video-time">{{ formatTime(displayedDuration) }}</span>
+
+      <button
+        class="btn btn-mute"
+        @click="toggleMute"
+        :title="isMuted || volume === 0 ? $t('unmute') : $t('mute')"
+      >
+        <span v-if="isMuted || volume === 0" class="material-symbols">volume_off</span>
+        <span v-else-if="volume < 0.5" class="material-symbols">volume_down</span>
+        <span v-else class="material-symbols">volume_up</span>
+      </button>
+
+      <input
+        type="range"
+        class="volume-slider"
+        min="0"
+        max="1"
+        step="0.05"
+        :value="isMuted ? 0 : volume"
+        :style="{ '--volume-fill': (isMuted ? 0 : volume) * 100 + '%' }"
+        @input="onVolumeChange"
+        aria-label="Volume"
+      />
+
       <button
         class="btn btn-fullscreen"
         @click="toggleFullscreen"
@@ -149,6 +173,9 @@ export default {
       hasEnded: false,
       hoveredChapter: null,
       hoveredChapterX: 0,
+      volume: 1,
+      isMuted: false,
+      prevVolume: 1,
     };
   },
   mounted() {
@@ -222,6 +249,8 @@ export default {
       this.video.setAttribute("id", this.videoid);
       this.videoReady = true;
       this.duration = this.video.duration;
+      this.volume = this.video.volume;
+      this.isMuted = this.video.muted;
       if (this.range && this.range.start > 0) {
         this.video.currentTime = this.range.start;
         this.currentTime = this.range.start;
@@ -438,6 +467,30 @@ export default {
     onSeekbarLeave() {
       this.hoveredChapter = null;
     },
+    toggleMute() {
+      if (!this.video) return;
+      if (this.isMuted || this.volume === 0) {
+        this.isMuted = false;
+        this.video.muted = false;
+        this.volume = this.prevVolume || 1;
+        this.video.volume = this.volume;
+      } else {
+        this.prevVolume = this.volume;
+        this.isMuted = true;
+        this.video.muted = true;
+      }
+    },
+    onVolumeChange(e) {
+      const val = parseFloat(e.target.value);
+      this.volume = val;
+      if (this.video) {
+        this.video.volume = val;
+      }
+      if (val > 0) {
+        this.isMuted = false;
+        this.video.muted = false;
+      }
+    },
   },
 };
 </script>
@@ -583,7 +636,8 @@ export default {
 }
 
 .btn-fullscreen,
-.btn-playpause {
+.btn-playpause,
+.btn-mute {
   background: none;
   border: none;
   border-radius: 4px;
@@ -607,15 +661,71 @@ export default {
 
 .btn-fullscreen:hover,
 .btn-playpause:hover,
+.btn-mute:hover,
 .btn-fullscreen:focus-visible,
-.btn-playpause:focus-visible {
+.btn-playpause:focus-visible,
+.btn-mute:focus-visible {
   background: #e9ecef;
   color: #222;
   outline: none;
 }
 
 .btn-fullscreen:focus-visible,
-.btn-playpause:focus-visible {
+.btn-playpause:focus-visible,
+.btn-mute:focus-visible {
   box-shadow: 0 0 0 2px #86b7fe;
+}
+
+.volume-slider {
+  width: 80px;
+  height: 6px;
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  outline: none;
+  cursor: pointer;
+}
+
+.volume-slider::-webkit-slider-runnable-track {
+  height: 6px;
+  border-radius: 3px;
+  background: linear-gradient(to right, #4a90d9 0%, #4a90d9 var(--volume-fill, 100%), #ccc var(--volume-fill, 100%), #ccc 100%);
+}
+
+.volume-slider::-moz-range-track {
+  height: 6px;
+  border-radius: 3px;
+  background: #ccc;
+}
+
+.volume-slider::-moz-range-progress {
+  height: 6px;
+  border-radius: 3px;
+  background: #4a90d9;
+}
+
+.volume-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #4a90d9;
+  cursor: pointer;
+  margin-top: -4px;
+}
+
+.volume-slider::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #4a90d9;
+  cursor: pointer;
+  border: none;
+}
+
+.volume-slider:focus-visible {
+  box-shadow: 0 0 0 2px #86b7fe;
+  border-radius: 3px;
 }
 </style>

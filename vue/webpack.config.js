@@ -121,6 +121,11 @@ module.exports = (env, options) => {
             );
             const destPath = path.resolve(__dirname, "../amd/src/app-lazy.js");
             if (fs.existsSync(srcPath)) {
+              // Create src directory if it doesn't exist
+              const destDir = path.dirname(destPath);
+              if (!fs.existsSync(destDir)) {
+                fs.mkdirSync(destDir, { recursive: true });
+              }
               fs.copyFileSync(srcPath, destPath);
             }
           });

@@ -51,7 +51,7 @@
         <span v-else class="material-symbols">pause</span>
       </button>
 
-      <span class="video-time">{{ formatTime(displayedCurrentTime) }}</span>
+      <span :title="$t('currentTime')" class="video-time">{{ formatTime(displayedCurrentTime) }}</span>
       <span class="seekbar-wrapper" @mousemove="onSeekbarHover" @mouseleave="onSeekbarLeave">
         <span class="seekbar-visual">
           <div class="seekbar-fill" :style="{ width: video && video.duration > 0 && effectiveMax > effectiveMin ? ((currentTime - effectiveMin) / (effectiveMax - effectiveMin) * 100) + '%' : '0%' }"></div>
@@ -84,7 +84,7 @@
           aria-label="Video seekbar"
         />
       </span>
-      <span class="video-time">{{ formatTime(displayedDuration) }}</span>
+      <span :title="$t('duration')" class="video-time">{{ formatTime(displayedDuration) }}</span>
 
       <button
         class="btn btn-mute"
@@ -180,10 +180,12 @@ export default {
   },
   mounted() {
     document.addEventListener("fullscreenchange", this.onFullscreenChange);
+    document.addEventListener("keydown", this.onKeydown);
     this.videoid = "videoid" + Math.floor(Math.random() * 1000);
   },
   beforeUnmount() {
     document.removeEventListener("fullscreenchange", this.onFullscreenChange);
+    document.removeEventListener("keydown", this.onKeydown);
     if (this.timer) {
       clearInterval(this.timer);
       this.timer = null;
@@ -423,6 +425,23 @@ export default {
         this.video.pause();
       }
     },
+    onKeydown(e) {
+      if (e.key !== " " && e.code !== "Space") return;
+      if (!this.videoReady || this.videoError) return;
+
+      const tag = document.activeElement?.tagName?.toLowerCase();
+      const isEditable =
+        tag === "input" ||
+        tag === "textarea" ||
+        tag === "select" ||
+        tag === "button" ||
+        document.activeElement?.isContentEditable;
+
+      if (isEditable) return;
+
+      e.preventDefault();
+      this.handlePlayClick();
+    },
     toggleFullscreen() {
       const el = this.$el;
       if (!document.fullscreenElement) {
@@ -509,6 +528,7 @@ export default {
   width: 100%;
   height: 100%;
   display: block;
+  border-radius: 8px;
 }
 
 .video-controls {
@@ -543,7 +563,6 @@ export default {
   pointer-events: none;
   background: #ccc;
   border-radius: 3px;
-  overflow: hidden;
 }
 
 .seekbar-fill {
@@ -570,16 +589,29 @@ export default {
   outline: none;
 }
 
-.seekbar-input:focus-visible ~ .seekbar-visual {
-  outline: 2px solid #86b7fe;
-  outline-offset: 4px;
-  border-radius: 3px;
+.seekbar-wrapper::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 10px;
+  transform: translateY(-50%);
+  border-radius: 5px;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.seekbar-wrapper:focus-within::after {
+  box-shadow: 0 0 0 2px #86b7fe;
 }
 
 .seekbar-chapters {
   position: absolute;
   inset: 0;
   pointer-events: none;
+  border-radius: 3px;
+  overflow: hidden;
 }
 
 .seekbar-chapter {

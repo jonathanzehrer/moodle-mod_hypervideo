@@ -229,24 +229,34 @@ export default {
       this.$emit('ready', { duration: this.duration });
     },
     onTimeUpdate() {
-      if (this.video) {
-        if (this.range) {
-          if (this.video.currentTime < this.range.start) {
-            this.video.currentTime = this.range.start;
-          }
-          if (this.range.end != null && this.video.currentTime >= this.range.end) {
-            this.video.currentTime = this.range.end;
-            this.video.pause();
-            this.onEnded();
-            return;
-          }
+      if (!this.video) return;
+
+      // Keep the reactive currentTime in sync *before* range clamping,
+      // so the seekbar fill always reflects the video's real position.
+      this.currentTime = this.video.currentTime;
+
+      if (this.range) {
+        if (this.video.currentTime < this.range.start) {
+          this._rangeClamping = true;
+          this.video.currentTime = this.range.start;
+          this.currentTime = this.range.start;
         }
-        if (!this.isSeeking) {
-          this.seekStart = this.video.currentTime;
+        // Guard with !this.hasEnded to break the infinite loop:
+        // setting video.currentTime = range.end fires another timeupdate,
+        // which would re-enter this block and spam pause/ended/playback forever.
+        if (this.range.end != null && this.video.currentTime >= this.range.end && !this.hasEnded) {
+          this._rangeClamping = true;
+          this.video.currentTime = this.range.end;
+          this.currentTime = this.range.end;
+          this.video.pause();
+          this.onEnded();
+          return;
         }
-        this.currentTime = this.video.currentTime;
-        this.$emit('timeupdate', { currentTime: this.currentTime, duration: this.duration });
       }
+      if (!this.isSeeking) {
+        this.seekStart = this.video.currentTime;
+      }
+      this.$emit('timeupdate', { currentTime: this.currentTime, duration: this.duration });
     },
     loop() {
       if (!this.video) {
@@ -310,6 +320,9 @@ export default {
         }
       }
       if (this.video) {
+        // User-initiated seek means they want to keep watching;
+        // reset the ended state so the replay button reverts to play/pause.
+        this.hasEnded = false;
         this.video.currentTime = time;
         this.currentTime = time;
         this.$emit('chapter-seek', {
@@ -328,6 +341,13 @@ export default {
       if (!this.video) {
         return;
       }
+      // Only clear ended state for user-initiated seeks.
+      // Programmatic range-clamp seeks (from onTimeUpdate) must
+      // let onEnded's hasEnded=true stand so the replay icon appears.
+      if (!this._rangeClamping) {
+        this.hasEnded = false;
+      }
+      this._rangeClamping = false;
       const from = this.seekStart;
       const to = this.video.currentTime;
       const distance = to - from;

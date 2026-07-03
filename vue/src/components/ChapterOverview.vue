@@ -17,7 +17,7 @@
           type="button"
           class="hypervideo-chapters-button"
           :aria-label="$t('chapters_goto') + ' ' + chapter.title"
-          @click="$emit('seek', chapter.time)"
+          @click="selectChapter(index, chapter.time)"
         >
           <span class="hypervideo-chapters-label">{{ chapter.title }}</span>
           <span class="hypervideo-chapters-duration">{{
@@ -46,21 +46,12 @@ export default {
     },
   },
   emits: ["seek"],
+  data() {
+    return {
+      activeIndex: 0,
+    };
+  },
   computed: {
-    activeIndex() {
-      if (!this.chapters.length) {
-        return -1;
-      }
-      let active = 0;
-      for (let i = 1; i < this.chapters.length; i++) {
-        if (this.currentTime >= this.chapters[i].time) {
-          active = i;
-        } else {
-          break;
-        }
-      }
-      return active;
-    },
     segmentDurations() {
       return this.chapters.map((ch, i) => {
         if (i < this.chapters.length - 1) {
@@ -71,6 +62,10 @@ export default {
     },
   },
   methods: {
+    selectChapter(index, time) {
+      this.activeIndex = index;
+      this.$emit("seek", time);
+    },
     segmentDurationText(index) {
       const dur = this.segmentDurations[index];
       if (dur == null) return "";

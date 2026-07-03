@@ -29,21 +29,20 @@
   </div>
 </template>
 
-<script lang="ts">
+<script>
 import Logger from "./scripts/logger";
 import Communication from "./scripts/communication";
 import VideoPlayer from "./components/VideoPlayer.vue";
-import ChapterList from "./components/ChapterList.vue";
 
 export default {
+  // Register child components
   components: {
-    VideoPlayer,
-    ChapterList,
+    VideoPlayer
   },
   data() {
     return {
       logger: null,
-      headingId: "",
+      headingId: "hypervideo-title-" + Math.floor(Math.random() * 10000),
     }
   },
   computed: {
@@ -58,7 +57,7 @@ export default {
     },
   },
   mounted() {
-    this.headingId = "hypervideo-title-" + Math.floor(Math.random() * 10000);
+    // this.headingId = ;
     this.logger = new Logger(
       this.$store.state.courseid,
       this.$store.state.hypervideoid,

@@ -117,10 +117,20 @@
         <span v-else class="material-symbols">fullscreen_exit</span>
       </button>
     </div>
+
+    <Survey
+      :show="showSurvey"
+      :question="$t('survey_question')"
+      :submit-label="$t('survey_submit')"
+      @submit="onSurveySubmit"
+      @close="onSurveyDismiss"
+    />
   </div>
 </template>
 
 <script>
+import Survey from "./Survey.vue";
+
 export default {
   props: {
     url: {
@@ -143,6 +153,13 @@ export default {
       type: Object,
       default: null,
     },
+    enableSurvey: {
+      type: Boolean,
+      default: true,
+    },
+  },
+  components: {
+    Survey,
   },
   emits: [
     'play',
@@ -153,6 +170,7 @@ export default {
     'chapter-seek',
     'timeupdate',
     'ready',
+    'survey-response',
   ],
   data() {
     return {
@@ -176,6 +194,7 @@ export default {
       volume: 1, // Represents `video.volume`, the current volume level (1 = 100%)
       isMuted: false, // Represents `video.muted`, whether the video is muted
       prevVolume: 1, // To restore volume after unmuting
+      showSurvey: false,
     };
   },
   mounted() {
@@ -414,6 +433,7 @@ export default {
       clearInterval(this.timer);
       this.timer = null;
       this.loop();
+      this.maybeShowSurvey();
     },
     handlePlayClick() {
       if (this.hasEnded) {
@@ -514,6 +534,39 @@ export default {
         this.isMuted = true;
         this.video.muted = true;
       }
+    },
+
+    // ---------- Survey ----------
+
+    maybeShowSurvey() {
+      if (!this.enableSurvey) {
+        return;
+      }
+      const storageKey = 'mod_hypervideo_survey_' + this.$store.state.hypervideoid;
+      try {
+        const answered = window.localStorage.getItem(storageKey);
+        if (answered) {
+          return;
+        }
+      } catch (e) {
+        // localStorage unavailable — still show survey
+      }
+      this.showSurvey = true;
+    },
+
+    onSurveySubmit(rating) {
+      const storageKey = 'mod_hypervideo_survey_' + this.$store.state.hypervideoid;
+      try {
+        window.localStorage.setItem(storageKey, String(rating));
+      } catch (e) {
+        // storage full or unavailable — silently ignore
+      }
+      this.showSurvey = false;
+      this.$emit('survey-response', rating);
+    },
+
+    onSurveyDismiss() {
+      this.showSurvey = false;
     },
   },
 };

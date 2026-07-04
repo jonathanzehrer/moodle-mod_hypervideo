@@ -20,6 +20,7 @@
           @chapter-seek="onPlayerChapterSeek"
           @timeupdate="onPlayerTimeUpdate"
           @ready="onPlayerReady"
+          @survey-response="onSurveyResponse"
         />
         <div class="variant-indicator variant-1">
           You are looking at variant 1
@@ -37,7 +38,7 @@ import VideoPlayer from "./components/VideoPlayer.vue";
 export default {
   // Register child components
   components: {
-    VideoPlayer
+    VideoPlayer,
   },
   data() {
     return {
@@ -108,6 +109,15 @@ export default {
     },
     onPlayerReady({ duration }) {
       // Duration available if needed by parent
+    },
+    onSurveyResponse(rating) {
+      this.log('survey_response', {
+        context: 'media_hypervideo',
+        action: 'survey_response',
+        values: rating,
+        currenttime: 0,
+        duration: 0,
+      });
     },
     log(key, values) {
       if (this.logger) {

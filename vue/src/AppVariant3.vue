@@ -22,6 +22,7 @@
           :title="title"
           :heading-id="headingId"
           :range="range"
+          :enable-survey="enableSurvey"
           @play="onPlayerPlay"
           @pause="onPlayerPause"
           @seeked="onPlayerSeeked"
@@ -30,6 +31,7 @@
           @chapter-seek="onPlayerChapterSeek"
           @timeupdate="onPlayerTimeUpdate"
           @ready="onPlayerReady"
+          @survey-response="onSurveyResponse"
         />
         <div v-if="!range" class="chapter-placeholder">
           Select a chapter to start watching
@@ -71,6 +73,13 @@ export default {
     },
     chapters() {
       return this.$store.state.chapters;
+    },
+    enableSurvey() {
+      if (!this.range || this.chapters.length === 0) {
+        return false;
+      }
+      const lastChapter = this.chapters[this.chapters.length - 1];
+      return this.range.start === lastChapter.time;
     },
   },
   mounted() {
@@ -152,6 +161,15 @@ export default {
       });
       video.addEventListener('error', () => {
         video.remove();
+      });
+    },
+    onSurveyResponse(rating) {
+      this.log('survey_response', {
+        context: 'media_hypervideo',
+        action: 'survey_response',
+        values: rating,
+        currenttime: 0,
+        duration: 0,
       });
     },
     log(key, values) {

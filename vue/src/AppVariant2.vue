@@ -29,6 +29,7 @@
           @chapter-seek="onPlayerChapterSeek"
           @timeupdate="onPlayerTimeUpdate"
           @ready="onPlayerReady"
+          @survey-response="onSurveyResponse"
         />
         <div class="variant-indicator variant-2">
           You are looking at variant 2
@@ -126,6 +127,15 @@ export default {
     },
     onPlayerReady({ duration }) {
       this.duration = duration;
+    },
+    onSurveyResponse(rating) {
+      this.log('survey_response', {
+        context: 'media_hypervideo',
+        action: 'survey_response',
+        values: rating,
+        currenttime: 0,
+        duration: 0,
+      });
     },
     log(key, values) {
       if (this.logger) {

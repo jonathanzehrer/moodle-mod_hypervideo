@@ -156,7 +156,7 @@ export default {
   ],
   data() {
     return {
-      video: null,
+      video: null, // Reference to the <video> element
       seekStart: 0,
       videoid: 0,
       videoprogress: 0,
@@ -168,14 +168,14 @@ export default {
       videoReady: false,
       currentTime: 0,
       isSeeking: false,
-      isPaused: true,
+      isPaused: true, // Whether the video is currently paused (true) or playing (false)
       isFullscreen: false,
       hasEnded: false,
       hoveredChapter: null,
       hoveredChapterX: 0,
-      volume: 1,
-      isMuted: false,
-      prevVolume: 1,
+      volume: 1, // Represents `video.volume`, the current volume level (1 = 100%)
+      isMuted: false, // Represents `video.muted`, whether the video is muted
+      prevVolume: 1, // To restore volume after unmuting
     };
   },
   mounted() {
@@ -425,6 +425,7 @@ export default {
         this.video.pause();
       }
     },
+    // Handle spacebar play/pause, but only if the user isn't focused on an input field or other editable element.
     onKeydown(e) {
       if (e.key !== " " && e.code !== "Space") return;
       if (!this.videoReady || this.videoError) return;
@@ -508,6 +509,10 @@ export default {
       if (val > 0) {
         this.isMuted = false;
         this.video.muted = false;
+      } else {
+        // Volume dragged to zero: reflect it as muted so toggleMute works correctly.
+        this.isMuted = true;
+        this.video.muted = true;
       }
     },
   },

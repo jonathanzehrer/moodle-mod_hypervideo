@@ -86,6 +86,7 @@ export default {
     );
     this.logger.init();
     this.getVideoProgress();
+    this.preloadVideoDuration();
   },
   methods: {
     async getVideoProgress() {
@@ -137,6 +138,21 @@ export default {
       if (this.range && this.range.end == null) {
         this.range = { ...this.range, end: duration };
       }
+    },
+    preloadVideoDuration() {
+      if (!this.url) return;
+      const video = document.createElement('video');
+      video.preload = 'metadata';
+      video.src = this.url;
+      video.addEventListener('loadedmetadata', () => {
+        if (video.duration > 0) {
+          this.duration = video.duration;
+        }
+        video.remove();
+      });
+      video.addEventListener('error', () => {
+        video.remove();
+      });
     },
     log(key, values) {
       if (this.logger) {

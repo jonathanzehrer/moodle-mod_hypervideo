@@ -107,7 +107,16 @@ export default {
     segmentDurationText(index) {
       const dur = this.segmentDurations[index];
       if (dur == null) return "";
-      return Math.round(dur) + "s";
+      return this.formatTime(Math.round(dur));
+    },
+    formatTime(seconds) {
+      if (isNaN(seconds) || seconds === Infinity || seconds === 0) {
+        return "0:00";
+      }
+      const s = Math.floor(seconds);
+      const m = Math.floor(s / 60);
+      const sec = s % 60;
+      return `${m}:${sec.toString().padStart(2, "0")}`;
     },
   },
 };

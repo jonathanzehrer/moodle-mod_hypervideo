@@ -1,9 +1,14 @@
 <template>
-  <div class="player-container">
+  <div
+    class="player-container"
+    @mouseenter="onMouseEnter"
+    @mouseleave="onMouseLeave"
+  >
     <!-- Overview back button overlay -->
     <button
       v-if="onOverview"
       class="overview-back-btn"
+      :class="{ 'controls-hidden': !controlsVisible }"
       :title="$t('back_to_overview')"
       :aria-label="$t('back_to_overview')"
       @click.stop="onOverview"
@@ -51,7 +56,11 @@
       <p>{{ $t("aria_videonotsupported") }}</p>
     </video>
 
-    <div class="video-controls" v-if="videoReady && !videoError">
+    <div
+      class="video-controls"
+      :class="{ 'controls-hidden': !controlsVisible }"
+      v-if="videoReady && !videoError"
+    >
       <button
         class="btn btn-playpause"
         @click="handlePlayClick"
@@ -126,18 +135,20 @@
         <span v-else class="material-symbols" aria-hidden="true">volume_up</span>
       </button>
 
-      <input
-        type="range"
-        class="volume-slider"
-        min="0"
-        max="1"
-        step="0.05"
-        :value="isMuted ? 0 : volume"
-        :style="{ '--volume-fill': (isMuted ? 0 : volume) * 100 + '%' }"
-        @input="onVolumeChange"
-        @change="onVolumeChangeLog"
-        aria-label="Volume"
-      />
+      <span class="volume-slider-wrapper">
+        <input
+          type="range"
+          class="volume-slider"
+          min="0"
+          max="1"
+          step="0.05"
+          :value="isMuted ? 0 : volume"
+          :style="{ '--volume-fill': (isMuted ? 0 : volume) * 100 + '%' }"
+          @input="onVolumeChange"
+          @change="onVolumeChangeLog"
+          aria-label="Volume"
+        />
+      </span>
 
       <div class="speed-control">
         <button
@@ -316,18 +327,25 @@ export default {
       playbackSpeed: 1,
       speedMenuOpen: false,
       speedOptions: [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2],
+      isHovering: false,
+      isFocused: false,
+      controlsVisible: true,
     };
   },
   mounted() {
     document.addEventListener("fullscreenchange", this.onFullscreenChange);
     document.addEventListener("keydown", this.onKeydown);
     document.addEventListener("click", this.closeSpeedMenu);
+    this.$el.addEventListener("focusin", this.onFocusIn);
+    this.$el.addEventListener("focusout", this.onFocusOut);
     this.videoid = "videoid" + Math.floor(Math.random() * 1000);
   },
   beforeUnmount() {
     document.removeEventListener("fullscreenchange", this.onFullscreenChange);
     document.removeEventListener("keydown", this.onKeydown);
     document.removeEventListener("click", this.closeSpeedMenu);
+    this.$el.removeEventListener("focusin", this.onFocusIn);
+    this.$el.removeEventListener("focusout", this.onFocusOut);
     if (this.timer) {
       clearInterval(this.timer);
       this.timer = null;
@@ -419,6 +437,27 @@ export default {
     },
   },
   methods: {
+    updateControlsVisibility() {
+      this.controlsVisible = this.isHovering || this.isFocused;
+    },
+    onMouseEnter() {
+      this.isHovering = true;
+      this.updateControlsVisibility();
+    },
+    onMouseLeave() {
+      this.isHovering = false;
+      this.updateControlsVisibility();
+    },
+    onFocusIn() {
+      this.isFocused = true;
+      this.updateControlsVisibility();
+    },
+    onFocusOut(e) {
+      if (!this.$el.contains(e.relatedTarget)) {
+        this.isFocused = false;
+        this.updateControlsVisibility();
+      }
+    },
     setInitialProgress(videoprogressValue) {
       this.videoprogress = parseInt(videoprogressValue * this.interval, 10);
     },
@@ -961,7 +1000,7 @@ export default {
   backdrop-filter: blur(4px);
   color: #444;
   cursor: pointer;
-  transition: background 0.2s, transform 0.15s;
+  transition: background 0.2s, transform 0.15s, opacity 0.3s ease;
 }
 
 .overview-back-btn:hover,
@@ -998,6 +1037,7 @@ export default {
   background-color: #fffa;
   backdrop-filter: blur(4px);
   z-index: 6;
+  transition: opacity 0.3s ease;
 }
 
 .seekbar-wrapper {
@@ -1210,8 +1250,21 @@ export default {
 }
 
 .volume-slider:focus-visible {
-  box-shadow: 0 0 0 2px #004C97;
-  border-radius: 3px;
+  outline: none;
+}
+
+.volume-slider-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  margin: 0 4px;
+  padding: 4px;
+  border-radius: 6px;
+}
+
+.volume-slider-wrapper:focus-within {
+  outline: 2px solid #004C97;
+  outline-offset: 0;
 }
 
 /* ---------- Playback Speed ---------- */
@@ -1353,5 +1406,12 @@ export default {
 
 .ended-nav-btn .material-symbols {
   font-size: 1.5rem;
+}
+
+/* ---------- Controls visibility ---------- */
+
+.controls-hidden {
+  opacity: 0;
+  pointer-events: none;
 }
 </style>

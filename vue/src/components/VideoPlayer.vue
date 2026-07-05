@@ -605,8 +605,6 @@ export default {
         duration: this.video ? this.video.duration : 0,
       });
     },
-    // ---------- Survey ----------
-
     maybeShowSurvey() {
       if (!this.enableSurvey) {
         return;
@@ -622,7 +620,6 @@ export default {
       }
       this.showSurvey = true;
     },
-
     onSurveySubmit(rating) {
       const storageKey = 'mod_hypervideo_survey_' + this.$store.state.hypervideoid;
       try {
@@ -633,7 +630,6 @@ export default {
       this.showSurvey = false;
       this.$emit('survey-response', rating);
     },
-
     goToPrevious() {
       if (this.onPrevious) {
         this.onPrevious();

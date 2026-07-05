@@ -61,6 +61,7 @@ $string['survey_label_4'] = 'Agree';
 $string['survey_label_5'] = 'Strongly agree';
 $string['survey_submit'] = 'Submit feedback';
 $string['unmute'] = 'Unmute';
+$string['volume'] = 'Volume';
 $string['player_videonotavailable'] = 'Video not available';
 $string['pluginadministration'] = 'Hypervideo administration';
 $string['pluginname'] = 'Hypervideo';

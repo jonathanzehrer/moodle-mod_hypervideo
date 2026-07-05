@@ -82,7 +82,7 @@ class log_services extends base_external {
 
         $event = \mod_hypervideo\event\video_interaction_logged::create([
             'objectid' => (int) $data['hypervideoid'],
-            'context' => $d->value->context ?? $context,
+            'context' => $context,
             'userid' => $USER->id,
             'other' => [
                 'courseid' => (int) $data['courseid'],

@@ -27,6 +27,7 @@
           @ended="onPlayerEnded"
           @playback="onPlayerPlayback"
           @timeline-seek="onPlayerTimelineSeek"
+          @button-seek="onPlayerButtonSeek"
           @timeupdate="onPlayerTimeUpdate"
           @ready="onPlayerReady"
           @survey-response="onSurveyResponse"
@@ -111,7 +112,7 @@ export default {
           currenttime: time,
           duration: this.duration,
         });
-        this.$refs.videoPlayer.seekTo(time);
+        this.$refs.videoPlayer.seekTo(time, true);
       }
     },
     onPlayerPlay(details) {
@@ -134,6 +135,9 @@ export default {
     },
     onPlayerTimelineSeek(details) {
       this.log("timeline-seek", details);
+    },
+    onPlayerButtonSeek(details) {
+      this.log("button-seek", details);
     },
     onPlayerTimeUpdate({ currentTime, duration }) {
       this.currentTime = currentTime;

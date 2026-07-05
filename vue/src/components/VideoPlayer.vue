@@ -78,7 +78,7 @@
         class="btn btn-prevnext"
         :disabled="!hasPrevious"
         :title="$t('previous_' + prevNextTitle)"
-        @click="goToPrevious"
+        @click="goToPrevious('controls')"
       >
         <span class="material-symbols" aria-hidden="true">skip_previous</span>
       </button>
@@ -96,7 +96,7 @@
         class="btn btn-prevnext"
         :disabled="!hasNext"
         :title="$t('next_' + prevNextTitle)"
-        @click="goToNext"
+        @click="goToNext('controls')"
       >
         <span class="material-symbols" aria-hidden="true">skip_next</span>
       </button>
@@ -132,8 +132,8 @@
       :has-previous="hasPrevious"
       :has-next="hasNext"
       @replay="handlePlayClick"
-      @previous="goToPrevious"
-      @next="goToNext"
+      @previous="goToPrevious('ended-overlay')"
+      @next="goToNext('ended-overlay')"
     />
 
     <Survey
@@ -210,6 +210,7 @@ export default {
     'ended',
     'playback',
     'timeline-seek',
+    'button-seek',
     'timeupdate',
     'ready',
     'survey-response',
@@ -465,7 +466,7 @@ export default {
     onSeeking() {
       this.isSeeking = true;
     },
-    seekTo(time) {
+    seekTo(time, silent = false) {
       if (this.range) {
         time = Math.max(this.range.start, time);
         if (this.range.end != null) {
@@ -478,13 +479,15 @@ export default {
         this.hasEnded = false;
         this.video.currentTime = time;
         this.currentTime = time;
-        this.$emit('timeline-seek', {
-          context: "player",
-          action: "timeline-seek",
-          values: time,
-          currenttime: time,
-          duration: this.video.duration,
-        });
+        if (!silent) {
+          this.$emit('timeline-seek', {
+            context: "player",
+            action: "timeline-seek",
+            values: time,
+            currenttime: time,
+            duration: this.video.duration,
+          });
+        }
       }
     },
     onError() {
@@ -630,7 +633,8 @@ export default {
       this.showSurvey = false;
       this.$emit('survey-response', rating);
     },
-    goToPrevious() {
+    goToPrevious(source = 'controls') {
+      this.emitButtonSeek(source, 'previous');
       if (this.onPrevious) {
         this.onPrevious();
         this.playAfterNavigate();
@@ -653,7 +657,8 @@ export default {
         this.hasEnded = false;
       }
     },
-    goToNext() {
+    goToNext(source = 'controls') {
+      this.emitButtonSeek(source, 'next');
       if (this.onNext) {
         this.onNext();
         this.playAfterNavigate();
@@ -671,6 +676,16 @@ export default {
           return;
         }
       }
+    },
+    emitButtonSeek(source, direction) {
+      if (!this.video) return;
+      this.$emit('button-seek', {
+        context: 'player',
+        action: 'button-seek',
+        values: source + '-' + direction,
+        currenttime: this.currentTime,
+        duration: this.video.duration,
+      });
     },
     playAfterNavigate() {
       // After the parent updates the range, hasEnded will be reset by the

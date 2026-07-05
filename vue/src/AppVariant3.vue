@@ -38,6 +38,7 @@
           @ended="onPlayerEnded"
           @playback="onPlayerPlayback"
           @timeline-seek="onPlayerTimelineSeek"
+          @button-seek="onPlayerButtonSeek"
           @timeupdate="onPlayerTimeUpdate"
           @ready="onPlayerReady"
           @survey-response="onSurveyResponse"
@@ -166,6 +167,9 @@ export default {
     },
     onPlayerTimelineSeek(details) {
       this.log("timeline-seek", details);
+    },
+    onPlayerButtonSeek(details) {
+      this.log("button-seek", details);
     },
     onPlayerTimeUpdate({ currentTime, duration }) {
       this.currentTime = currentTime;

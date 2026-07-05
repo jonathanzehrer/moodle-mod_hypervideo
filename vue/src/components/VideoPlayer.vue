@@ -4,14 +4,14 @@
     @mouseenter="onMouseEnter"
     @mouseleave="onMouseLeave"
   >
-    <!-- Overview back button overlay -->
+    <!-- Overview back button overlay, only rendered when onOverview is provided -->
     <button
       v-if="onOverview"
       class="overview-back-btn"
       :class="{ 'controls-hidden': !controlsVisible }"
       :title="$t('back_to_overview')"
       :aria-label="$t('back_to_overview')"
-      @click.stop="onOverview"
+      @click="onOverview"
     >
       <span class="material-symbols" aria-hidden="true">arrow_back</span>
     </button>
@@ -61,6 +61,7 @@
       :class="{ 'controls-hidden': !controlsVisible }"
       v-if="videoReady && !videoError"
     >
+      <!-- Play/Pause/Repeat button -->
       <button
         class="btn btn-playpause"
         @click="handlePlayClick"
@@ -100,30 +101,13 @@
         <span class="material-symbols" aria-hidden="true">skip_next</span>
       </button>
 
-      <button
-        class="btn btn-mute"
-        @click="toggleMute"
-        :title="isMuted || volume === 0 ? $t('unmute') : $t('mute')"
-      >
-        <span v-if="isMuted || volume === 0" class="material-symbols" aria-hidden="true">volume_off</span>
-        <span v-else-if="volume < 0.5" class="material-symbols" aria-hidden="true">volume_down</span>
-        <span v-else class="material-symbols" aria-hidden="true">volume_up</span>
-      </button>
-
-      <span class="volume-slider-wrapper">
-        <input
-          type="range"
-          class="volume-slider"
-          min="0"
-          max="1"
-          step="0.05"
-          :value="isMuted ? 0 : volume"
-          :style="{ '--volume-fill': (isMuted ? 0 : volume) * 100 + '%' }"
-          @input="onVolumeChange"
-          @change="onVolumeChangeLog"
-          aria-label="Volume"
-        />
-      </span>
+      <VolumeControl
+        :video="video"
+        :initial-volume="volume"
+        :initial-muted="isMuted"
+        @volume-change="(e) => $emit('volume-change', e)"
+        @mute-change="(e) => $emit('mute-change', e)"
+      />
 
       <PlaybackSpeedControl
         :video="video"
@@ -141,38 +125,16 @@
     </div>
 
     <!-- Ended overlay -->
-    <div v-if="hasEnded && videoReady" class="ended-overlay">
-      <div class="ended-overlay-content">
-        <button
-          class="ended-replay-btn"
-          @click.stop="handlePlayClick"
-          :title="$t('rewatch')"
-          :aria-label="$t('rewatch')"
-        >
-          <span class="material-symbols" aria-hidden="true">replay</span>
-        </button>
-        <div v-if="showOverlayPrevNext" class="ended-nav">
-          <button
-            class="ended-nav-btn"
-            :disabled="!hasPrevious"
-            :title="$t('previous_' + prevNextTitle)"
-            :aria-label="$t('previous_' + prevNextTitle)"
-            @click.stop="goToPrevious"
-          >
-            <span class="material-symbols" aria-hidden="true">skip_previous</span>
-          </button>
-          <button
-            class="ended-nav-btn"
-            :disabled="!hasNext"
-            :title="$t('next_' + prevNextTitle)"
-            :aria-label="$t('next_' + prevNextTitle)"
-            @click.stop="goToNext"
-          >
-            <span class="material-symbols" aria-hidden="true">skip_next</span>
-          </button>
-        </div>
-      </div>
-    </div>
+    <EndedOverlay
+      v-if="hasEnded && videoReady"
+      :show-prev-next="showOverlayPrevNext"
+      :prev-next-title="prevNextTitle"
+      :has-previous="hasPrevious"
+      :has-next="hasNext"
+      @replay="handlePlayClick"
+      @previous="goToPrevious"
+      @next="goToNext"
+    />
 
     <Survey
       :show="showSurvey"
@@ -185,9 +147,11 @@
 </template>
 
 <script>
+import EndedOverlay from "./EndedOverlay.vue";
 import Survey from "./Survey.vue";
 import PlaybackSpeedControl from "./PlaybackSpeedControl.vue";
 import Seekbar from "./Seekbar.vue";
+import VolumeControl from "./VolumeControl.vue";
 
 export default {
   props: {
@@ -233,9 +197,11 @@ export default {
     },
   },
   components: {
+    EndedOverlay,
     Survey,
     PlaybackSpeedControl,
     Seekbar,
+    VolumeControl,
   },
   emits: [
     'play',
@@ -249,8 +215,6 @@ export default {
     'survey-response',
     'speed-change',
     'fullscreen-change',
-    'volume-change',
-    'mute-change',
   ],
   data() {
     return {
@@ -269,9 +233,8 @@ export default {
       isPaused: true, // Whether the video is currently paused (true) or playing (false)
       isFullscreen: false,
       hasEnded: false,
-      volume: 1, // Represents `video.volume`, the current volume level (1 = 100%)
-      isMuted: false, // Represents `video.muted`, whether the video is muted
-      prevVolume: 1, // To restore volume after unmuting
+      volume: 1, // Track initial volume for VolumeControl (read from video in onCanPlay)
+      isMuted: false, // Track initial muted state for VolumeControl (read from video in onCanPlay)
       showSurvey: false,
       isHovering: false,
       isFocused: false,
@@ -577,6 +540,7 @@ export default {
     },
     handlePlayClick() {
       if (this.hasEnded) {
+        // Replay from the start of the video (or the start of the range if provided)
         this.video.currentTime = this.range ? this.range.start : 0;
         this.video.play();
       } else if (this.isPaused) {
@@ -585,7 +549,7 @@ export default {
         this.video.pause();
       }
     },
-    // Global keyboard shortcuts: spacebar for play/pause, left/right arrows for ±5s seek.
+    // Global keyboard shortcuts: spacebar for play/pause, left/right arrows for +/-5s seek.
     onKeydown(e) {
       if (!this.videoReady || this.videoError) return;
 
@@ -641,62 +605,6 @@ export default {
         duration: this.video ? this.video.duration : 0,
       });
     },
-    toggleMute() {
-      if (!this.video) return;
-      if (this.isMuted || this.volume === 0) {
-        this.isMuted = false;
-        this.video.muted = false;
-        this.volume = this.prevVolume || 1;
-        this.video.volume = this.volume;
-        this.$emit('mute-change', {
-          context: 'player',
-          action: 'mute-change',
-          values: 'unmute',
-          currenttime: this.video.currentTime,
-          duration: this.video.duration,
-        });
-      } else {
-        this.prevVolume = this.volume;
-        this.isMuted = true;
-        this.video.muted = true;
-        this.$emit('mute-change', {
-          context: 'player',
-          action: 'mute-change',
-          values: 'mute',
-          currenttime: this.video.currentTime,
-          duration: this.video.duration,
-        });
-      }
-    },
-    onVolumeChange(e) {
-      const val = parseFloat(e.target.value);
-      this.volume = val;
-      if (this.video) {
-        this.video.volume = val;
-      }
-      if (val > 0) {
-        this.isMuted = false;
-        this.video.muted = false;
-      } else {
-        // Volume dragged to zero: reflect it as muted so toggleMute works correctly.
-        this.isMuted = true;
-        this.video.muted = true;
-      }
-    },
-
-    onVolumeChangeLog(e) {
-      const val = parseFloat(e.target.value);
-      if (this.video) {
-        this.$emit('volume-change', {
-          context: 'player',
-          action: 'volume-change',
-          values: val,
-          currenttime: this.video.currentTime,
-          duration: this.video.duration,
-        });
-      }
-    },
-
     // ---------- Survey ----------
 
     maybeShowSurvey() {
@@ -895,154 +803,6 @@ export default {
 .btn-prevnext:disabled:hover {
   background: none;
   color: #444;
-}
-
-.volume-slider {
-  width: 80px;
-  height: 6px;
-  -webkit-appearance: none;
-  appearance: none;
-  background: transparent;
-  outline: none;
-  cursor: pointer;
-}
-
-.volume-slider::-webkit-slider-runnable-track {
-  height: 6px;
-  border-radius: 3px;
-  background: linear-gradient(to right, #004C97 0%, #004C97 var(--volume-fill, 100%), #fff var(--volume-fill, 100%), #ccc 100%);
-}
-
-.volume-slider::-moz-range-track {
-  height: 6px;
-  border-radius: 3px;
-  background: #fff;
-}
-
-.volume-slider::-moz-range-progress {
-  height: 6px;
-  border-radius: 3px;
-  background: #004C97;
-}
-
-.volume-slider::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  background: #004C97;
-  cursor: pointer;
-  margin-top: -4px;
-}
-
-.volume-slider::-moz-range-thumb {
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  background: #004C97;
-  cursor: pointer;
-  border: none;
-}
-
-.volume-slider:focus-visible {
-  outline: none;
-}
-
-.volume-slider-wrapper {
-  position: relative;
-  display: flex;
-  align-items: center;
-  margin: 0 4px;
-  padding: 4px;
-  border-radius: 6px;
-}
-
-.volume-slider-wrapper:focus-within {
-  outline: 2px solid #004C97;
-  outline-offset: 0;
-}
-
-/* ---------- Ended Overlay ---------- */
-
-.ended-overlay {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(0, 0, 0, 0.55);
-  border-radius: 8px;
-  z-index: 5;
-}
-
-.ended-overlay-content {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 1.25rem;
-}
-
-.ended-replay-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 72px;
-  height: 72px;
-  border: none;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.9);
-  color: #222;
-  cursor: pointer;
-  transition: background 0.2s, transform 0.15s;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.25);
-}
-
-.ended-replay-btn:hover,
-.ended-replay-btn:focus-visible {
-  background: #fff;
-  transform: scale(1.08);
-  outline: 2px solid #004C97;
-}
-
-.ended-replay-btn .material-symbols {
-  font-size: 2.5rem;
-}
-
-.ended-nav {
-  display: flex;
-  gap: 1rem;
-}
-
-.ended-nav-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 44px;
-  height: 44px;
-  border: none;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.85);
-  color: #222;
-  cursor: pointer;
-  transition: background 0.2s, transform 0.15s;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-}
-
-.ended-nav-btn:hover:not(:disabled),
-.ended-nav-btn:focus-visible:not(:disabled) {
-  background: #fff;
-  transform: scale(1.08);
-  outline: 2px solid #004C97;
-}
-
-.ended-nav-btn:disabled {
-  opacity: 0.3;
-  cursor: default;
-}
-
-.ended-nav-btn .material-symbols {
-  font-size: 1.5rem;
 }
 
 /* ---------- Controls visibility ---------- */

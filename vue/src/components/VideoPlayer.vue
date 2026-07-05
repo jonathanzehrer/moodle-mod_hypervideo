@@ -304,7 +304,7 @@ export default {
       return (this.chapters && this.chapters.length > 0) || (this.onPrevious && this.onNext);
     },
     showOverlayPrevNext() {
-      return (this.onPrevious && this.onNext);
+      return !!(this.onPrevious && this.onNext);
     },
     prevNextTitle() {
       if (this.chapters && this.chapters.length > 0) {

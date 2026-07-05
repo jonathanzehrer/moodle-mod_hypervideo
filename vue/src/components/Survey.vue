@@ -104,7 +104,7 @@ export default {
   justify-content: center;
   background: rgba(0, 0, 0, 0.55);
   border-radius: 8px;
-  z-index: 10;
+  z-index: 5;
 }
 
 .hypervideo-survey {

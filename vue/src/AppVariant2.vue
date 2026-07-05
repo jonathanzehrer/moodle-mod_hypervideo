@@ -75,7 +75,7 @@ export default {
       this.$store.state.courseid,
       this.$store.state.hypervideoid,
       {
-        context: "media_hypervideo",
+        context: "player2",
         outputType: 1,
         url: this.$store.state.url,
       },

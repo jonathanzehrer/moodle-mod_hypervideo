@@ -46,9 +46,9 @@
         @click="handlePlayClick"
         :title="hasEnded ? $t('rewatch') : (isPaused ? $t('play') : $t('pause'))"
       >
-        <span v-if="hasEnded" class="material-symbols">replay</span>
-        <span v-else-if="isPaused" class="material-symbols">play_arrow</span>
-        <span v-else class="material-symbols">pause</span>
+        <span v-if="hasEnded" class="material-symbols" aria-hidden="true">replay</span>
+        <span v-else-if="isPaused" class="material-symbols" aria-hidden="true">play_arrow</span>
+        <span v-else class="material-symbols" aria-hidden="true">pause</span>
       </button>
 
       <span :title="$t('currentTime')" class="video-time">{{ formatTime(displayedCurrentTime) }}</span>
@@ -91,9 +91,9 @@
         @click="toggleMute"
         :title="isMuted || volume === 0 ? $t('unmute') : $t('mute')"
       >
-        <span v-if="isMuted || volume === 0" class="material-symbols">volume_off</span>
-        <span v-else-if="volume < 0.5" class="material-symbols">volume_down</span>
-        <span v-else class="material-symbols">volume_up</span>
+        <span v-if="isMuted || volume === 0" class="material-symbols" aria-hidden="true">volume_off</span>
+        <span v-else-if="volume < 0.5" class="material-symbols" aria-hidden="true">volume_down</span>
+        <span v-else class="material-symbols" aria-hidden="true">volume_up</span>
       </button>
 
       <input
@@ -113,6 +113,7 @@
         <button
           class="btn btn-speed"
           @click="toggleSpeedMenu"
+          @keydown="onSpeedTriggerKeydown"
           :title="$t('playback_speed')"
           aria-haspopup="true"
           :aria-expanded="speedMenuOpen"
@@ -121,7 +122,12 @@
           <span class="speed-label">{{ playbackSpeed }}x</span>
         </button>
         <transition name="speed-fade">
-          <div v-if="speedMenuOpen" class="speed-menu" role="menu">
+          <div
+            v-if="speedMenuOpen"
+            class="speed-menu"
+            role="menu"
+            @keydown="onSpeedMenuKeydown"
+          >
             <button
               v-for="speed in speedOptions"
               :key="speed"
@@ -141,8 +147,8 @@
         @click="toggleFullscreen"
         :title="isFullscreen ? $t('exit_fullscreen') : $t('fullscreen')"
       >
-        <span v-if="!isFullscreen" class="material-symbols">fullscreen</span>
-        <span v-else class="material-symbols">fullscreen_exit</span>
+        <span v-if="!isFullscreen" class="material-symbols" aria-hidden="true">fullscreen</span>
+        <span v-else class="material-symbols" aria-hidden="true">fullscreen_exit</span>
       </button>
     </div>
 
@@ -553,6 +559,15 @@ export default {
     },
     toggleSpeedMenu() {
       this.speedMenuOpen = !this.speedMenuOpen;
+      if (this.speedMenuOpen) {
+        this.$nextTick(() => {
+          const menu = this.$el.querySelector('.speed-menu');
+          if (menu) {
+            const active = menu.querySelector('.speed-option--active');
+            (active || menu.querySelector('.speed-option'))?.focus();
+          }
+        });
+      }
     },
     setPlaybackSpeed(speed) {
       const oldSpeed = this.playbackSpeed;
@@ -561,6 +576,9 @@ export default {
         this.video.playbackRate = speed;
       }
       this.speedMenuOpen = false;
+      this.$nextTick(() => {
+        this.$el.querySelector('.btn-speed')?.focus();
+      });
       this.$emit('speed-change', {
         context: 'player',
         action: 'speed-change',
@@ -569,6 +587,74 @@ export default {
         duration: this.video ? this.video.duration : 0,
       });
     },
+    onSpeedTriggerKeydown(e) {
+      if (!this.speedMenuOpen) return;
+
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        e.stopPropagation();
+        this.speedMenuOpen = false;
+        this.$nextTick(() => {
+          this.$el.querySelector('.btn-speed')?.focus();
+        });
+        return;
+      }
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        e.stopPropagation();
+        this.$nextTick(() => {
+          const menu = this.$el.querySelector('.speed-menu');
+          if (menu) {
+            const active = menu.querySelector('.speed-option--active');
+            (active || menu.querySelector('.speed-option'))?.focus();
+          }
+        });
+      }
+    },
+
+    onSpeedMenuKeydown(e) {
+      const items = Array.from(this.$el.querySelectorAll('.speed-option'));
+      if (!items.length) return;
+      const current = items.indexOf(document.activeElement);
+
+      switch (e.key) {
+        case 'ArrowDown':
+          e.preventDefault();
+          if (current < items.length - 1) {
+            items[current + 1].focus();
+          } else {
+            items[0].focus();
+          }
+          break;
+        case 'ArrowUp':
+          e.preventDefault();
+          if (current > 0) {
+            items[current - 1].focus();
+          } else {
+            items[items.length - 1].focus();
+          }
+          break;
+        case 'Home':
+          e.preventDefault();
+          items[0]?.focus();
+          break;
+        case 'End':
+          e.preventDefault();
+          items[items.length - 1]?.focus();
+          break;
+        case 'Escape':
+          e.preventDefault();
+          this.speedMenuOpen = false;
+          this.$nextTick(() => {
+            this.$el.querySelector('.btn-speed')?.focus();
+          });
+          break;
+        case 'Tab':
+          this.speedMenuOpen = false;
+          break;
+      }
+    },
+
     closeSpeedMenu(e) {
       if (this.speedMenuOpen && !this.$el.querySelector('.speed-control').contains(e.target)) {
         this.speedMenuOpen = false;
@@ -670,6 +756,8 @@ export default {
 .player-container {
   width: fit-content;
   position: relative;
+  border-radius: 8px;
+  overflow: hidden;
 }
 
 .hypervideo-error {
@@ -680,7 +768,6 @@ export default {
   width: 100%;
   height: 100%;
   display: block;
-  border-radius: 8px;
 }
 
 .video-controls {
@@ -693,6 +780,7 @@ export default {
   padding: 5px;
   align-items: center;
   background-color: #fffa;
+  backdrop-filter: blur(4px);
 }
 
 .seekbar-wrapper {

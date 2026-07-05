@@ -692,7 +692,7 @@ export default {
   gap: 5px;
   padding: 5px;
   align-items: center;
-  background-color: #eee8;
+  background-color: #fffa;
 }
 
 .seekbar-wrapper {
@@ -713,13 +713,13 @@ export default {
   height: 6px;
   transform: translateY(-50%);
   pointer-events: none;
-  background: #ccc;
+  background: #fff;
   border-radius: 3px;
 }
 
 .seekbar-fill {
   height: 6px;
-  background-color: #4a90d9;
+  background-color: #004C97;
   border-radius: 3px;
   transition: width 0.2s linear;
 }
@@ -755,7 +755,7 @@ export default {
 }
 
 .seekbar-wrapper:focus-within::after {
-  box-shadow: 0 0 0 2px #86b7fe;
+  box-shadow: 0 0 0 2px #004C97;
 }
 
 .seekbar-chapters {
@@ -778,21 +778,13 @@ export default {
   border-right: none;
 }
 
-.seekbar-chapter--even {
-  background: rgba(74, 144, 217, 0.08);
-}
-
-.seekbar-chapter--odd {
-  background: rgba(74, 144, 217, 0.18);
-}
-
 .seekbar-chapter-tooltip {
   position: absolute;
   bottom: calc(100% + 8px);
   transform: translateX(-50%);
-  background: #333;
-  color: #fff;
-  font-size: 0.75rem;
+  background: #fff;
+  color: #000;
+  font-size: 0.8rem;
   padding: 4px 8px;
   border-radius: 4px;
   white-space: nowrap;
@@ -813,51 +805,42 @@ export default {
 .video-time {
   font-size: 0.85rem;
   font-family: monospace;
-  color: #333;
+  color: #444;
   min-width: 3.5rem;
   text-align: center;
   user-select: none;
 }
 
-.btn-fullscreen,
-.btn-playpause,
-.btn-mute {
+.btn {
+  display: flex;
   background: none;
   border: none;
-  border-radius: 4px;
+  padding: 5px;
+  color: #444;
+  border-radius: 5px;
   cursor: pointer;
   font-size: 1rem;
-  line-height: 1;
-  padding: 4px 10px;
-  color: #555;
+
   transition: background 0.15s, color 0.15s;
 }
 
-.btn-playpause {
-  margin-right: 2px;
-  line-height: 0;
+.btn-speed {
+  font-size: 0.85rem;
+  font-family: monospace;
+  min-width: 3rem;
+  justify-content: center;
 }
 
-.btn-fullscreen {
-  margin-left: auto;
-  line-height: 0;
-}
-
-.btn-fullscreen:hover,
-.btn-playpause:hover,
-.btn-mute:hover,
-.btn-fullscreen:focus-visible,
-.btn-playpause:focus-visible,
-.btn-mute:focus-visible {
+.btn:hover,
+.btn:focus-visible {
   background: #e9ecef;
   color: #222;
-  outline: none;
 }
 
-.btn-fullscreen:focus-visible,
-.btn-playpause:focus-visible,
-.btn-mute:focus-visible {
-  box-shadow: 0 0 0 2px #86b7fe;
+.btn:focus-visible {
+  background: #e9ecef;
+  color: #222;
+  outline: 2px solid #004C97;
 }
 
 .volume-slider {
@@ -873,19 +856,19 @@ export default {
 .volume-slider::-webkit-slider-runnable-track {
   height: 6px;
   border-radius: 3px;
-  background: linear-gradient(to right, #4a90d9 0%, #4a90d9 var(--volume-fill, 100%), #ccc var(--volume-fill, 100%), #ccc 100%);
+  background: linear-gradient(to right, #004C97 0%, #004C97 var(--volume-fill, 100%), #fff var(--volume-fill, 100%), #ccc 100%);
 }
 
 .volume-slider::-moz-range-track {
   height: 6px;
   border-radius: 3px;
-  background: #ccc;
+  background: #fff;
 }
 
 .volume-slider::-moz-range-progress {
   height: 6px;
   border-radius: 3px;
-  background: #4a90d9;
+  background: #004C97;
 }
 
 .volume-slider::-webkit-slider-thumb {
@@ -894,7 +877,7 @@ export default {
   width: 14px;
   height: 14px;
   border-radius: 50%;
-  background: #4a90d9;
+  background: #004C97;
   cursor: pointer;
   margin-top: -4px;
 }
@@ -903,13 +886,13 @@ export default {
   width: 14px;
   height: 14px;
   border-radius: 50%;
-  background: #4a90d9;
+  background: #004C97;
   cursor: pointer;
   border: none;
 }
 
 .volume-slider:focus-visible {
-  box-shadow: 0 0 0 2px #86b7fe;
+  box-shadow: 0 0 0 2px #004C97;
   border-radius: 3px;
 }
 
@@ -919,30 +902,6 @@ export default {
   position: relative;
   display: flex;
   align-items: center;
-}
-
-.btn-speed {
-  background: none;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 0.85rem;
-  font-weight: 600;
-  font-family: monospace;
-  line-height: 1;
-  padding: 4px 10px;
-  color: #555;
-  transition: background 0.15s, color 0.15s;
-  min-width: 3rem;
-  text-align: center;
-}
-
-.btn-speed:hover,
-.btn-speed:focus-visible {
-  background: #e9ecef;
-  color: #222;
-  outline: none;
-  box-shadow: 0 0 0 2px #86b7fe;
 }
 
 .speed-label {
@@ -958,7 +917,6 @@ export default {
   border: 1px solid #ddd;
   border-radius: 6px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  padding: 4px 0;
   z-index: 20;
   min-width: 72px;
 }
@@ -982,7 +940,8 @@ export default {
 }
 
 .speed-option--active {
-  color: #4a90d9;
+  color: #004C97;
+  background-color: #004C9730;
   font-weight: 600;
 }
 

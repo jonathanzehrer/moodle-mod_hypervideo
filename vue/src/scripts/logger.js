@@ -116,6 +116,7 @@ export default function Logger(courseid, hypervideoid, options) {
         data: {
           courseid: parseInt(this.courseid, 10),
           hypervideoid: parseInt(this.hypervideoid, 10),
+          context: entry.context,
           action: entry.action,
           utc: Math.ceil(entry.utc / 1000),
           entry: JSON.stringify(entry),

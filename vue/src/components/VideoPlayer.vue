@@ -167,7 +167,7 @@ export default {
     'seeked',
     'ended',
     'playback',
-    'chapter-seek',
+    'timeline-seek',
     'timeupdate',
     'ready',
     'survey-response',
@@ -375,9 +375,9 @@ export default {
         this.hasEnded = false;
         this.video.currentTime = time;
         this.currentTime = time;
-        this.$emit('chapter-seek', {
+        this.$emit('timeline-seek', {
           context: "player",
-          action: "chapter-seek",
+          action: "timeline-seek",
           values: time,
           currenttime: time,
           duration: this.video.duration,

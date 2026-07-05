@@ -17,7 +17,7 @@
           @seeked="onPlayerSeeked"
           @ended="onPlayerEnded"
           @playback="onPlayerPlayback"
-          @chapter-seek="onPlayerChapterSeek"
+          @timeline-seek="onPlayerTimelineSeek"
           @timeupdate="onPlayerTimeUpdate"
           @ready="onPlayerReady"
           @survey-response="onSurveyResponse"
@@ -101,8 +101,8 @@ export default {
     onPlayerPlayback(details) {
       this.log("playback", details);
     },
-    onPlayerChapterSeek(details) {
-      this.log("chapter-seek", details);
+    onPlayerTimelineSeek(details) {
+      this.log("timeline-seek", details);
     },
     onPlayerTimeUpdate({ currentTime, duration }) {
       // Time info available if needed by parent

@@ -26,7 +26,7 @@
           @seeked="onPlayerSeeked"
           @ended="onPlayerEnded"
           @playback="onPlayerPlayback"
-          @chapter-seek="onPlayerChapterSeek"
+          @timeline-seek="onPlayerTimelineSeek"
           @timeupdate="onPlayerTimeUpdate"
           @ready="onPlayerReady"
           @survey-response="onSurveyResponse"
@@ -100,6 +100,13 @@ export default {
     },
     seekTo(time) {
       if (this.$refs.videoPlayer) {
+        this.onPlayerChapterSeek({
+          context: "player2",
+          action: "chapter-seek",
+          values: time,
+          currenttime: time,
+          duration: this.duration,
+        });
         this.$refs.videoPlayer.seekTo(time);
       }
     },
@@ -120,6 +127,9 @@ export default {
     },
     onPlayerChapterSeek(details) {
       this.log("chapter-seek", details);
+    },
+    onPlayerTimelineSeek(details) {
+      this.log("timeline-seek", details);
     },
     onPlayerTimeUpdate({ currentTime, duration }) {
       this.currentTime = currentTime;

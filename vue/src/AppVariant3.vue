@@ -28,7 +28,7 @@
           @seeked="onPlayerSeeked"
           @ended="onPlayerEnded"
           @playback="onPlayerPlayback"
-          @chapter-seek="onPlayerChapterSeek"
+          @timeline-seek="onPlayerTimelineSeek"
           @timeupdate="onPlayerTimeUpdate"
           @ready="onPlayerReady"
           @survey-response="onSurveyResponse"
@@ -119,6 +119,13 @@ export default {
       const nextChapter = this.chapters[idx + 1];
       const end = nextChapter ? nextChapter.time : null;
       this.range = { start, end };
+      this.onPlayerChapterSeek({
+        context: "player3",
+        action: "chapter-seek",
+        values: time,
+        currenttime: time,
+        duration: this.duration,
+      });
     },
     onPlayerPlay(details) {
       this.log("play", details);
@@ -137,6 +144,9 @@ export default {
     },
     onPlayerChapterSeek(details) {
       this.log("chapter-seek", details);
+    },
+    onPlayerTimelineSeek(details) {
+      this.log("timeline-seek", details);
     },
     onPlayerTimeUpdate({ currentTime, duration }) {
       this.currentTime = currentTime;

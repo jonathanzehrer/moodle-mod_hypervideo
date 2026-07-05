@@ -61,7 +61,32 @@ export default {
       });
     },
   },
+  mounted() {
+    this.updateActiveIndex();
+  },
+  watch: {
+    currentTime() {
+      this.updateActiveIndex();
+    },
+    chapters() {
+      this.updateActiveIndex();
+    },
+  },
   methods: {
+    updateActiveIndex() {
+      if (!this.chapters.length) {
+        this.activeIndex = 0;
+        return;
+      }
+      // Chapters are assumed sorted by time. Find the one that contains currentTime.
+      for (let i = this.chapters.length - 1; i >= 0; i--) {
+        if (this.currentTime >= this.chapters[i].time) {
+          this.activeIndex = i;
+          return;
+        }
+      }
+      this.activeIndex = 0;
+    },
     selectChapter(index, time) {
       this.activeIndex = index;
       this.$emit("seek", time);

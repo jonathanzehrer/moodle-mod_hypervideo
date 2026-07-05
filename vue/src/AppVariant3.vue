@@ -22,7 +22,11 @@
           :title="title"
           :heading-id="headingId"
           :range="range"
+          :chapters="chapters"
+          :show-chapter-marks="false"
           :enable-survey="enableSurvey"
+          :on-previous="goToPreviousChapter"
+          :on-next="goToNextChapter"
           @play="onPlayerPlay"
           @pause="onPlayerPause"
           @seeked="onPlayerSeeked"
@@ -197,6 +201,30 @@ export default {
     },
     onPlayerMuteChange(details) {
       this.log('mute-change', details);
+    },
+    goToPreviousChapter() {
+      const sorted = [...this.chapters].sort((a, b) => a.time - b.time);
+      const currentStart = this.range ? this.range.start : 0;
+      let prevChapter = null;
+      for (let i = sorted.length - 1; i >= 0; i--) {
+        if (sorted[i].time < currentStart - 0.5) {
+          prevChapter = sorted[i];
+          break;
+        }
+      }
+      if (prevChapter) {
+        this.onChapterSeek(prevChapter.time);
+      }
+    },
+    goToNextChapter() {
+      const sorted = [...this.chapters].sort((a, b) => a.time - b.time);
+      const currentStart = this.range ? this.range.start : 0;
+      for (let i = 0; i < sorted.length; i++) {
+        if (sorted[i].time > currentStart + 0.5) {
+          this.onChapterSeek(sorted[i].time);
+          return;
+        }
+      }
     },
     log(key, values) {
       if (this.logger) {

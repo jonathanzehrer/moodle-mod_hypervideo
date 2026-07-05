@@ -52,10 +52,19 @@
       </button>
 
       <span :title="$t('currentTime')" class="video-time">{{ formatTime(displayedCurrentTime) }}</span>
+      <button
+        v-if="showPrevNext"
+        class="btn btn-prevnext"
+        :disabled="!hasPrevious"
+        :title="$t('previous_' + prevNextTitle)"
+        @click="goToPrevious"
+      >
+        <span class="material-symbols" aria-hidden="true">skip_previous</span>
+      </button>
       <span class="seekbar-wrapper" @mousemove="onSeekbarHover" @mouseleave="onSeekbarLeave">
         <span class="seekbar-visual">
           <div class="seekbar-fill" :style="{ width: video && video.duration > 0 && effectiveMax > effectiveMin ? ((currentTime - effectiveMin) / (effectiveMax - effectiveMin) * 100) + '%' : '0%' }"></div>
-          <div v-if="displayChapters.length" class="seekbar-chapters">
+          <div v-if="showChapterMarks && displayChapters.length" class="seekbar-chapters">
             <div
               v-for="(ch, index) in displayChapters"
               :key="index"
@@ -78,13 +87,23 @@
           class="seekbar-input"
           :min="effectiveMin"
           :max="effectiveMax"
-          step="1"
+          step="any"
           v-model="currentTime"
           @input="seekTo(currentTime)"
+          @keydown="onSeekbarKeydown"
           aria-label="Video seekbar"
         />
       </span>
       <span :title="$t('duration')" class="video-time">{{ formatTime(displayedDuration) }}</span>
+      <button
+        v-if="showPrevNext"
+        class="btn btn-prevnext"
+        :disabled="!hasNext"
+        :title="$t('next_' + prevNextTitle)"
+        @click="goToNext"
+      >
+        <span class="material-symbols" aria-hidden="true">skip_next</span>
+      </button>
 
       <button
         class="btn btn-mute"
@@ -191,6 +210,18 @@ export default {
       type: Boolean,
       default: true,
     },
+    onPrevious: {
+      type: Function,
+      default: null,
+    },
+    onNext: {
+      type: Function,
+      default: null,
+    },
+    showChapterMarks: {
+      type: Boolean,
+      default: true,
+    },
   },
   components: {
     Survey,
@@ -290,6 +321,35 @@ export default {
         const widthPercent = ((end - start) / duration) * 100;
         return { ...ch, start, end, startPercent, widthPercent };
       });
+    },
+    sortedChapters() {
+      if (!this.chapters || !this.chapters.length) return [];
+      return [...this.chapters].sort((a, b) => a.time - b.time);
+    },
+    showPrevNext() {
+      return (this.chapters && this.chapters.length > 0) || (this.onPrevious && this.onNext);
+    },
+    prevNextTitle() {
+      if (this.chapters && this.chapters.length > 0) {
+        return 'chapter';
+      }
+      return 'video';
+    },
+    hasPrevious() {
+      if (this.chapters && this.chapters.length > 0) {
+        const sorted = this.sortedChapters;
+        return sorted.some(ch => ch.time < this.currentTime - 0.5);
+      }
+      // No chapters: disable if at or near the start of the video.
+      return this.currentTime > 0.5;
+    },
+    hasNext() {
+      if (this.chapters && this.chapters.length > 0) {
+        const sorted = this.sortedChapters;
+        return sorted.some(ch => ch.time > this.currentTime + 0.5);
+      }
+      // No chapters: disable if at or near the end of the video.
+      return this.video && this.currentTime < this.video.duration - 0.5;
     },
   },
   watch: {
@@ -488,9 +548,8 @@ export default {
         this.video.pause();
       }
     },
-    // Handle spacebar play/pause, but only if the user isn't focused on an input field or other editable element.
+    // Global keyboard shortcuts: spacebar for play/pause, left/right arrows for ±5s seek.
     onKeydown(e) {
-      if (e.key !== " " && e.code !== "Space") return;
       if (!this.videoReady || this.videoError) return;
 
       const tag = document.activeElement?.tagName?.toLowerCase();
@@ -501,10 +560,20 @@ export default {
         tag === "button" ||
         document.activeElement?.isContentEditable;
 
-      if (isEditable) return;
+      // Spacebar: play/pause (skip when editable elements are focused)
+      if ((e.key === " " || e.code === "Space") && !isEditable) {
+        e.preventDefault();
+        this.handlePlayClick();
+        return;
+      }
 
-      e.preventDefault();
-      this.handlePlayClick();
+      // Left/Right arrows: seek ±5 seconds (skip when editable elements are focused)
+      if ((e.key === "ArrowLeft" || e.key === "ArrowRight") && !isEditable) {
+        e.preventDefault();
+        const delta = e.key === "ArrowRight" ? 5 : -5;
+        const newTime = this.currentTime + delta;
+        this.seekTo(newTime);
+      }
     },
     toggleFullscreen() {
       const el = this.$el;
@@ -534,6 +603,15 @@ export default {
         currenttime: this.video ? this.video.currentTime : 0,
         duration: this.video ? this.video.duration : 0,
       });
+    },
+    // Keyboard navigation on the seekbar input: left/right arrows seek ±5 seconds.
+    onSeekbarKeydown(e) {
+      if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
+        e.preventDefault();
+        const delta = e.key === "ArrowRight" ? 5 : -5;
+        const newTime = this.currentTime + delta;
+        this.seekTo(newTime);
+      }
     },
     onSeekbarHover(e) {
       if (!this.displayChapters.length) {
@@ -745,6 +823,47 @@ export default {
       this.$emit('survey-response', rating);
     },
 
+    goToPrevious() {
+      if (this.onPrevious) {
+        this.onPrevious();
+        return;
+      }
+      // Fallback: navigate to previous chapter internally
+      if (!this.chapters || !this.chapters.length || !this.video) return;
+      const sorted = this.sortedChapters;
+      const currentTime = this.currentTime;
+      // Find the chapter whose start is strictly before currentTime and closest
+      let prevChapter = null;
+      for (let i = sorted.length - 1; i >= 0; i--) {
+        if (sorted[i].time < currentTime - 0.5) {
+          prevChapter = sorted[i];
+          break;
+        }
+      }
+      if (prevChapter) {
+        this.video.currentTime = prevChapter.time;
+        this.currentTime = prevChapter.time;
+        this.hasEnded = false;
+      }
+    },
+    goToNext() {
+      if (this.onNext) {
+        this.onNext();
+        return;
+      }
+      // Fallback: navigate to next chapter internally
+      if (!this.chapters || !this.chapters.length || !this.video) return;
+      const sorted = this.sortedChapters;
+      const currentTime = this.currentTime;
+      for (let i = 0; i < sorted.length; i++) {
+        if (sorted[i].time > currentTime + 0.5) {
+          this.video.currentTime = sorted[i].time;
+          this.currentTime = sorted[i].time;
+          this.hasEnded = false;
+          return;
+        }
+      }
+    },
     onSurveyDismiss() {
       this.showSurvey = false;
     },
@@ -920,15 +1039,28 @@ export default {
 }
 
 .btn:hover,
-.btn:focus-visible {
+.btn:focus-visible,
+.btn-prevnext:hover,
+.btn-prevnext:focus-visible {
   background: #e9ecef;
   color: #222;
 }
 
-.btn:focus-visible {
+.btn:focus-visible,
+.btn-prevnext:focus-visible {
   background: #e9ecef;
   color: #222;
   outline: 2px solid #004C97;
+}
+
+.btn-prevnext:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.btn-prevnext:disabled:hover {
+  background: none;
+  color: #444;
 }
 
 .volume-slider {

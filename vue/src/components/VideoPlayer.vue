@@ -105,8 +105,36 @@
         :value="isMuted ? 0 : volume"
         :style="{ '--volume-fill': (isMuted ? 0 : volume) * 100 + '%' }"
         @input="onVolumeChange"
+        @change="onVolumeChangeLog"
         aria-label="Volume"
       />
+
+      <div class="speed-control">
+        <button
+          class="btn btn-speed"
+          @click="toggleSpeedMenu"
+          :title="$t('playback_speed')"
+          aria-haspopup="true"
+          :aria-expanded="speedMenuOpen"
+          aria-label="Playback speed"
+        >
+          <span class="speed-label">{{ playbackSpeed }}x</span>
+        </button>
+        <transition name="speed-fade">
+          <div v-if="speedMenuOpen" class="speed-menu" role="menu">
+            <button
+              v-for="speed in speedOptions"
+              :key="speed"
+              class="speed-option"
+              :class="{ 'speed-option--active': playbackSpeed === speed }"
+              role="menuitem"
+              @click="setPlaybackSpeed(speed)"
+            >
+              {{ speed }}x
+            </button>
+          </div>
+        </transition>
+      </div>
 
       <button
         class="btn btn-fullscreen"
@@ -171,6 +199,10 @@ export default {
     'timeupdate',
     'ready',
     'survey-response',
+    'speed-change',
+    'fullscreen-change',
+    'volume-change',
+    'mute-change',
   ],
   data() {
     return {
@@ -195,16 +227,21 @@ export default {
       isMuted: false, // Represents `video.muted`, whether the video is muted
       prevVolume: 1, // To restore volume after unmuting
       showSurvey: false,
+      playbackSpeed: 1,
+      speedMenuOpen: false,
+      speedOptions: [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2],
     };
   },
   mounted() {
     document.addEventListener("fullscreenchange", this.onFullscreenChange);
     document.addEventListener("keydown", this.onKeydown);
+    document.addEventListener("click", this.closeSpeedMenu);
     this.videoid = "videoid" + Math.floor(Math.random() * 1000);
   },
   beforeUnmount() {
     document.removeEventListener("fullscreenchange", this.onFullscreenChange);
     document.removeEventListener("keydown", this.onKeydown);
+    document.removeEventListener("click", this.closeSpeedMenu);
     if (this.timer) {
       clearInterval(this.timer);
       this.timer = null;
@@ -484,6 +521,13 @@ export default {
     },
     onFullscreenChange() {
       this.isFullscreen = !!document.fullscreenElement;
+      this.$emit('fullscreen-change', {
+        context: 'player',
+        action: 'fullscreen-change',
+        values: this.isFullscreen ? 'enter' : 'exit',
+        currenttime: this.video ? this.video.currentTime : 0,
+        duration: this.video ? this.video.duration : 0,
+      });
     },
     onSeekbarHover(e) {
       if (!this.displayChapters.length) {
@@ -507,6 +551,29 @@ export default {
     onSeekbarLeave() {
       this.hoveredChapter = null;
     },
+    toggleSpeedMenu() {
+      this.speedMenuOpen = !this.speedMenuOpen;
+    },
+    setPlaybackSpeed(speed) {
+      const oldSpeed = this.playbackSpeed;
+      this.playbackSpeed = speed;
+      if (this.video) {
+        this.video.playbackRate = speed;
+      }
+      this.speedMenuOpen = false;
+      this.$emit('speed-change', {
+        context: 'player',
+        action: 'speed-change',
+        values: JSON.stringify({ from: oldSpeed, to: speed }),
+        currenttime: this.video ? this.video.currentTime : 0,
+        duration: this.video ? this.video.duration : 0,
+      });
+    },
+    closeSpeedMenu(e) {
+      if (this.speedMenuOpen && !this.$el.querySelector('.speed-control').contains(e.target)) {
+        this.speedMenuOpen = false;
+      }
+    },
     toggleMute() {
       if (!this.video) return;
       if (this.isMuted || this.volume === 0) {
@@ -514,10 +581,24 @@ export default {
         this.video.muted = false;
         this.volume = this.prevVolume || 1;
         this.video.volume = this.volume;
+        this.$emit('mute-change', {
+          context: 'player',
+          action: 'mute-change',
+          values: 'unmute',
+          currenttime: this.video.currentTime,
+          duration: this.video.duration,
+        });
       } else {
         this.prevVolume = this.volume;
         this.isMuted = true;
         this.video.muted = true;
+        this.$emit('mute-change', {
+          context: 'player',
+          action: 'mute-change',
+          values: 'mute',
+          currenttime: this.video.currentTime,
+          duration: this.video.duration,
+        });
       }
     },
     onVolumeChange(e) {
@@ -533,6 +614,19 @@ export default {
         // Volume dragged to zero: reflect it as muted so toggleMute works correctly.
         this.isMuted = true;
         this.video.muted = true;
+      }
+    },
+
+    onVolumeChangeLog(e) {
+      const val = parseFloat(e.target.value);
+      if (this.video) {
+        this.$emit('volume-change', {
+          context: 'player',
+          action: 'volume-change',
+          values: val,
+          currenttime: this.video.currentTime,
+          duration: this.video.duration,
+        });
       }
     },
 
@@ -817,5 +911,88 @@ export default {
 .volume-slider:focus-visible {
   box-shadow: 0 0 0 2px #86b7fe;
   border-radius: 3px;
+}
+
+/* ---------- Playback Speed ---------- */
+
+.speed-control {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.btn-speed {
+  background: none;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 600;
+  font-family: monospace;
+  line-height: 1;
+  padding: 4px 10px;
+  color: #555;
+  transition: background 0.15s, color 0.15s;
+  min-width: 3rem;
+  text-align: center;
+}
+
+.btn-speed:hover,
+.btn-speed:focus-visible {
+  background: #e9ecef;
+  color: #222;
+  outline: none;
+  box-shadow: 0 0 0 2px #86b7fe;
+}
+
+.speed-label {
+  display: inline-block;
+}
+
+.speed-menu {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  padding: 4px 0;
+  z-index: 20;
+  min-width: 72px;
+}
+
+.speed-option {
+  display: block;
+  width: 100%;
+  padding: 6px 16px;
+  border: none;
+  background: none;
+  font-size: 0.85rem;
+  font-family: monospace;
+  text-align: center;
+  cursor: pointer;
+  color: #333;
+  transition: background 0.1s, color 0.1s;
+}
+
+.speed-option:hover {
+  background: #f0f0f0;
+}
+
+.speed-option--active {
+  color: #4a90d9;
+  font-weight: 600;
+}
+
+.speed-fade-enter-active,
+.speed-fade-leave-active {
+  transition: opacity 0.15s ease;
+}
+
+.speed-fade-enter-from,
+.speed-fade-leave-to {
+  opacity: 0;
 }
 </style>

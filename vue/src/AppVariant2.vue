@@ -30,6 +30,10 @@
           @timeupdate="onPlayerTimeUpdate"
           @ready="onPlayerReady"
           @survey-response="onSurveyResponse"
+          @speed-change="onPlayerSpeedChange"
+          @fullscreen-change="onPlayerFullscreenChange"
+          @volume-change="onPlayerVolumeChange"
+          @mute-change="onPlayerMuteChange"
         />
         <div class="variant-indicator variant-2">
           You are looking at variant 2
@@ -146,6 +150,18 @@ export default {
         currenttime: 0,
         duration: 0,
       });
+    },
+    onPlayerSpeedChange(details) {
+      this.log('speed-change', details);
+    },
+    onPlayerFullscreenChange(details) {
+      this.log('fullscreen-change', details);
+    },
+    onPlayerVolumeChange(details) {
+      this.log('volume-change', details);
+    },
+    onPlayerMuteChange(details) {
+      this.log('mute-change', details);
     },
     log(key, values) {
       if (this.logger) {

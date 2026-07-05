@@ -6,7 +6,8 @@
   >
     <h3 v-if="title" class="hypervideo-title" :id="headingId">{{ title }}</h3>
     <div class="row mt-3">
-      <div v-if="chapters.length" class="col-md-3">
+      <!-- Chapter Overview: shown by default, full width -->
+      <div v-if="chapters.length && showOverview" class="col-12">
         <ChapterOverview
           :chapters="chapters"
           :current-time="currentTime"
@@ -15,7 +16,9 @@
           @seek="onChapterSeek"
         />
       </div>
-      <div :class="chapters.length ? 'col-md-9' : 'col-12'">
+
+      <!-- Video: shown when a chapter is selected (with back-to-overview) or when no chapters exist -->
+      <div v-else class="col-12">
         <VideoPlayer
           v-if="range"
           ref="videoPlayer"
@@ -28,6 +31,7 @@
           :enable-survey="enableSurvey"
           :on-previous="goToPreviousChapter"
           :on-next="goToNextChapter"
+          :on-overview="chapters.length ? goToOverview : null"
           @play="onPlayerPlay"
           @pause="onPlayerPause"
           @seeked="onPlayerSeeked"
@@ -71,6 +75,7 @@ export default {
       currentTime: 0,
       duration: 0,
       range: null,
+      showOverview: true,
     };
   },
   computed: {
@@ -128,6 +133,7 @@ export default {
       const nextChapter = this.chapters[idx + 1];
       const end = nextChapter ? nextChapter.time : null;
       this.range = { start, end };
+      this.showOverview = false;
       this.onPlayerChapterSeek({
         context: "player3",
         action: "chapter-seek",
@@ -135,6 +141,10 @@ export default {
         currenttime: time,
         duration: this.duration,
       });
+    },
+    goToOverview() {
+      this.showOverview = true;
+      this.range = null;
     },
     onPlayerPlay(details) {
       this.log("play", details);

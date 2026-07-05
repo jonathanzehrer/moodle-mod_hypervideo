@@ -24,6 +24,7 @@
 
 $string['aria_videonotsupported'] = 'Ihr Browser unterstützt kein eingebettetes Video. Bitte aktualisieren Sie Ihren Browser oder verwenden Sie einen anderen.';
 $string['aria_videoplayer'] = 'Videoplayer';
+$string['back_to_overview'] = 'Zurück zur Übersicht';
 $string['chapters'] = 'Kapitel';
 $string['chapters_goto'] = 'Springe zu';
 $string['chapters_help'] = 'Geben Sie pro Zeile ein Kapitel im Format: Zeit Titel ein. Beispiel:\n0:00 Einführung\n2:30 Hauptthema\n1:05:00 Zusammenfassung';

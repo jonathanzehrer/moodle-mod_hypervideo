@@ -1,5 +1,16 @@
 <template>
   <div class="player-container">
+    <!-- Overview back button overlay -->
+    <button
+      v-if="onOverview"
+      class="overview-back-btn"
+      :title="$t('back_to_overview')"
+      :aria-label="$t('back_to_overview')"
+      @click.stop="onOverview"
+    >
+      <span class="material-symbols" aria-hidden="true">arrow_back</span>
+    </button>
+
     <!-- Player error -->
     <div
       v-if="videoError"
@@ -249,6 +260,10 @@ export default {
       default: null,
     },
     onNext: {
+      type: Function,
+      default: null,
+    },
+    onOverview: {
       type: Function,
       default: null,
     },
@@ -926,6 +941,39 @@ export default {
   position: relative;
   border-radius: 8px;
   overflow: hidden;
+}
+
+/* ---------- Overview Back Button ---------- */
+
+.overview-back-btn {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 50%;
+  background-color: #fffa;
+  backdrop-filter: blur(4px);
+  color: #444;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.15s;
+}
+
+.overview-back-btn:hover,
+.overview-back-btn:focus-visible {
+  background: #fff;
+  color: #000;
+  transform: scale(1.1);
+  /* outline: 2px solid #fff; */
+}
+
+.overview-back-btn .material-symbols {
+  font-size: 1.25rem;
 }
 
 .hypervideo-error {

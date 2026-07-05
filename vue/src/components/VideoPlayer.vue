@@ -182,7 +182,7 @@
         >
           <span class="material-symbols" aria-hidden="true">replay</span>
         </button>
-        <div v-if="showPrevNext" class="ended-nav">
+        <div v-if="showOverlayPrevNext" class="ended-nav">
           <button
             class="ended-nav-btn"
             :disabled="!hasPrevious"
@@ -363,6 +363,9 @@ export default {
     showPrevNext() {
       return (this.chapters && this.chapters.length > 0) || (this.onPrevious && this.onNext);
     },
+    showOverlayPrevNext() {
+      return (this.onPrevious && this.onNext);
+    },
     prevNextTitle() {
       if (this.chapters && this.chapters.length > 0) {
         return 'chapter';
@@ -372,7 +375,8 @@ export default {
     hasPrevious() {
       if (this.chapters && this.chapters.length > 0) {
         const sorted = this.sortedChapters;
-        return sorted.some(ch => ch.time < this.currentTime - 0.5);
+        const ref = this.range ? this.range.start : this.currentTime;
+        return sorted.some(ch => ch.time < ref - 0.5);
       }
       // No chapters: disable if at or near the start of the video.
       return this.currentTime > 0.5;
@@ -380,7 +384,8 @@ export default {
     hasNext() {
       if (this.chapters && this.chapters.length > 0) {
         const sorted = this.sortedChapters;
-        return sorted.some(ch => ch.time > this.currentTime + 0.5);
+        const ref = this.range ? this.range.start : this.currentTime;
+        return sorted.some(ch => ch.time > ref + 0.5);
       }
       // No chapters: disable if at or near the end of the video.
       return this.video && this.currentTime < this.video.duration - 0.5;
@@ -860,13 +865,13 @@ export default {
     goToPrevious() {
       if (this.onPrevious) {
         this.onPrevious();
+        this.playAfterNavigate();
         return;
       }
       // Fallback: navigate to previous chapter internally
       if (!this.chapters || !this.chapters.length || !this.video) return;
       const sorted = this.sortedChapters;
       const currentTime = this.currentTime;
-      // Find the chapter whose start is strictly before currentTime and closest
       let prevChapter = null;
       for (let i = sorted.length - 1; i >= 0; i--) {
         if (sorted[i].time < currentTime - 0.5) {
@@ -883,6 +888,7 @@ export default {
     goToNext() {
       if (this.onNext) {
         this.onNext();
+        this.playAfterNavigate();
         return;
       }
       // Fallback: navigate to next chapter internally
@@ -897,6 +903,15 @@ export default {
           return;
         }
       }
+    },
+    playAfterNavigate() {
+      // After the parent updates the range, hasEnded will be reset by the
+      // range watcher. Auto-play so the next segment starts immediately.
+      this.$nextTick(() => {
+        if (this.video && this.video.paused) {
+          this.video.play().catch(() => {});
+        }
+      });
     },
     onSurveyDismiss() {
       this.showSurvey = false;

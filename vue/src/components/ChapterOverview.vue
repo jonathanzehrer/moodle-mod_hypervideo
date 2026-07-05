@@ -44,6 +44,10 @@ export default {
       type: Number,
       default: 0,
     },
+    range: {
+      type: Object,
+      default: null,
+    },
   },
   emits: ["seek"],
   data() {
@@ -71,6 +75,12 @@ export default {
     chapters() {
       this.updateActiveIndex();
     },
+    range: {
+      handler() {
+        this.updateActiveIndex();
+      },
+      deep: true,
+    },
   },
   methods: {
     updateActiveIndex() {
@@ -78,9 +88,12 @@ export default {
         this.activeIndex = 0;
         return;
       }
-      // Chapters are assumed sorted by time. Find the one that contains currentTime.
+      // Use range.start as the authoritative chapter when a range is active,
+      // so the highlight stays on the current chapter even after reaching
+      // the segment boundary (where currentTime equals the next chapter's start).
+      const refTime = this.range ? this.range.start : this.currentTime;
       for (let i = this.chapters.length - 1; i >= 0; i--) {
-        if (this.currentTime >= this.chapters[i].time) {
+        if (refTime >= this.chapters[i].time) {
           this.activeIndex = i;
           return;
         }

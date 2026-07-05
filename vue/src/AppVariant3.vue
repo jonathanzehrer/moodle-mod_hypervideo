@@ -11,6 +11,7 @@
           :chapters="chapters"
           :current-time="currentTime"
           :duration="duration"
+          :range="range"
           @seek="onChapterSeek"
         />
       </div>

@@ -81,39 +81,14 @@
       >
         <span class="material-symbols" aria-hidden="true">skip_previous</span>
       </button>
-      <span class="seekbar-wrapper" @mousemove="onSeekbarHover" @mouseleave="onSeekbarLeave">
-        <span class="seekbar-visual">
-          <div class="seekbar-fill" :style="{ width: video && video.duration > 0 && effectiveMax > effectiveMin ? ((currentTime - effectiveMin) / (effectiveMax - effectiveMin) * 100) + '%' : '0%' }"></div>
-          <div v-if="showChapterMarks && displayChapters.length" class="seekbar-chapters">
-            <div
-              v-for="(ch, index) in displayChapters"
-              :key="index"
-              class="seekbar-chapter"
-              :class="'seekbar-chapter--' + (index % 2 === 0 ? 'even' : 'odd')"
-              :style="{ left: ch.startPercent + '%', width: ch.widthPercent + '%' }"
-            ></div>
-          </div>
-        </span>
-        <transition name="tooltip-fade">
-          <span
-            v-if="hoveredChapter"
-            class="seekbar-chapter-tooltip"
-            :style="{ left: hoveredChapterX + 'px' }"
-          >
-            {{ hoveredChapter }}
-          </span>
-        </transition>
-        <input type="range"
-          class="seekbar-input"
-          :min="effectiveMin"
-          :max="effectiveMax"
-          step="any"
-          v-model="currentTime"
-          @input="seekTo(currentTime)"
-          @keydown="onSeekbarKeydown"
-          aria-label="Video seekbar"
-        />
-      </span>
+      <Seekbar
+        v-model="currentTime"
+        :min="effectiveMin"
+        :max="effectiveMax"
+        :show-chapter-marks="showChapterMarks"
+        :display-chapters="displayChapters"
+        @seek="seekTo"
+      />
       <span :title="$t('duration')" class="video-time">{{ formatTime(displayedDuration) }}</span>
       <button
         v-if="showPrevNext"
@@ -212,6 +187,7 @@
 <script>
 import Survey from "./Survey.vue";
 import PlaybackSpeedControl from "./PlaybackSpeedControl.vue";
+import Seekbar from "./Seekbar.vue";
 
 export default {
   props: {
@@ -259,6 +235,7 @@ export default {
   components: {
     Survey,
     PlaybackSpeedControl,
+    Seekbar,
   },
   emits: [
     'play',
@@ -292,8 +269,6 @@ export default {
       isPaused: true, // Whether the video is currently paused (true) or playing (false)
       isFullscreen: false,
       hasEnded: false,
-      hoveredChapter: null,
-      hoveredChapterX: 0,
       volume: 1, // Represents `video.volume`, the current volume level (1 = 100%)
       isMuted: false, // Represents `video.muted`, whether the video is muted
       prevVolume: 1, // To restore volume after unmuting
@@ -666,37 +641,6 @@ export default {
         duration: this.video ? this.video.duration : 0,
       });
     },
-    // Keyboard navigation on the seekbar input: left/right arrows seek ±5 seconds.
-    onSeekbarKeydown(e) {
-      if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
-        e.preventDefault();
-        const delta = e.key === "ArrowRight" ? 5 : -5;
-        const newTime = this.currentTime + delta;
-        this.seekTo(newTime);
-      }
-    },
-    onSeekbarHover(e) {
-      if (!this.displayChapters.length) {
-        this.hoveredChapter = null;
-        return;
-      }
-      const rect = e.currentTarget.getBoundingClientRect();
-      const ratio = (e.clientX - rect.left) / rect.width;
-      const timeAtCursor = this.effectiveMin + ratio * (this.effectiveMax - this.effectiveMin);
-
-      for (let i = 0; i < this.displayChapters.length; i++) {
-        const ch = this.displayChapters[i];
-        if (timeAtCursor >= ch.start && timeAtCursor < ch.end) {
-          this.hoveredChapter = ch.title;
-          this.hoveredChapterX = e.clientX - rect.left;
-          return;
-        }
-      }
-      this.hoveredChapter = null;
-    },
-    onSeekbarLeave() {
-      this.hoveredChapter = null;
-    },
     toggleMute() {
       if (!this.video) return;
       if (this.isMuted || this.volume === 0) {
@@ -904,113 +848,6 @@ export default {
   backdrop-filter: blur(4px);
   z-index: 6;
   transition: opacity 0.3s ease;
-}
-
-.seekbar-wrapper {
-  flex: 1;
-  position: relative;
-  height: 24px;
-  margin: 0 8px;
-  display: flex;
-  align-items: center;
-  cursor: pointer;
-}
-
-.seekbar-visual {
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: 50%;
-  height: 6px;
-  transform: translateY(-50%);
-  pointer-events: none;
-  background: #fff;
-  border-radius: 3px;
-}
-
-.seekbar-fill {
-  height: 6px;
-  background-color: #004C97;
-  border-radius: 3px;
-  transition: width 0.2s linear;
-}
-
-.seekbar-input {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  margin: 0;
-  opacity: 0;
-  cursor: pointer;
-  -webkit-appearance: none;
-  appearance: none;
-  z-index: 1;
-}
-
-.seekbar-input:focus-visible {
-  outline: none;
-}
-
-.seekbar-wrapper::after {
-  content: '';
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: 50%;
-  height: 10px;
-  transform: translateY(-50%);
-  border-radius: 5px;
-  pointer-events: none;
-  z-index: 2;
-}
-
-.seekbar-wrapper:focus-within::after {
-  box-shadow: 0 0 0 2px #004C97;
-}
-
-.seekbar-chapters {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  border-radius: 3px;
-  overflow: hidden;
-}
-
-.seekbar-chapter {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  border-right: 2px solid rgba(0, 0, 0, 0.3);
-  pointer-events: none;
-}
-
-.seekbar-chapter:last-child {
-  border-right: none;
-}
-
-.seekbar-chapter-tooltip {
-  position: absolute;
-  bottom: calc(100% + 8px);
-  transform: translateX(-50%);
-  background: #fff;
-  color: #000;
-  font-size: 0.8rem;
-  padding: 4px 8px;
-  border-radius: 4px;
-  white-space: nowrap;
-  pointer-events: none;
-  z-index: 10;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-}
-
-.tooltip-fade-enter-active,
-.tooltip-fade-leave-active {
-  transition: opacity 0.15s ease;
-}
-.tooltip-fade-enter-from,
-.tooltip-fade-leave-to {
-  opacity: 0;
 }
 
 .video-time {

@@ -53,20 +53,24 @@ export const init = async (
   title,
   initialData = null,
   userid = 0,
+  playerstyle = 'random',
 ) => {
   Communication.setPluginName(fullPluginName);
 
-  const variant = computeVariant(hypervideoid, userid);
-
-  // Dynamically load the variant component.
-  let App;
-  if (variant === 0) {
-    App = (await import("./AppVariant1.vue")).default;
-  } else if (variant === 1) {
-    App = (await import("./AppVariant2.vue")).default;
-  } else {
-    App = (await import("./AppVariant3.vue")).default;
+  // If "random" is selected, compute variant deterministically from IDs.
+  let variantFile = playerstyle;
+  if (variantFile === 'random') {
+    const variant = computeVariant(hypervideoid, userid);
+    variantFile = `AppVariant${variant + 1}.vue`;
   }
+
+  // Use an explicit lookup so Vite can statically analyze each import.
+  const variantLoaders = {
+    'AppVariant1.vue': () => import('./AppVariant1.vue'),
+    'AppVariant2.vue': () => import('./AppVariant2.vue'),
+    'AppVariant3.vue': () => import('./AppVariant3.vue'),
+  };
+  const App = (await variantLoaders[variantFile]()).default;
 
   const store = createStore({
     pluginName: fullPluginName,

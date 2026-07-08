@@ -103,6 +103,7 @@ $PAGE->requires->js_call_amd('mod_hypervideo/app-lazy', 'init', [
     format_string($hypervideo->name),
     $initialdata,
     $USER->id,
+    $hypervideo->playerstyle ?? 'AppVariant1.vue',
 ]);
 
 echo $OUTPUT->footer();

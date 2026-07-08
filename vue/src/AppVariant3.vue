@@ -6,20 +6,8 @@
   >
     <h3 v-if="title" class="hypervideo-title" :id="headingId">{{ title }}</h3>
     <div class="row mt-3">
-      <!-- Chapter Overview: shown by default, full width -->
-      <div v-if="chapters.length && showOverview" class="col-12">
-        <ChapterOverview
-          :chapters="chapters"
-          :current-time="currentTime"
-          :duration="duration"
-          :range="range"
-          :video-url="url"
-          @seek="onChapterSeek"
-        />
-      </div>
-
-      <!-- Video: shown when a chapter is selected (with back-to-overview) or when no chapters exist -->
-      <div v-else class="col-12">
+      <!-- Video player: always visible on the left -->
+      <div :class="chapters.length ? 'col-12 col-lg-8' : 'col-12'">
         <VideoPlayer
           v-if="range"
           ref="videoPlayer"
@@ -32,7 +20,7 @@
           :enable-survey="enableSurvey"
           :on-previous="goToPreviousChapter"
           :on-next="goToNextChapter"
-          :on-overview="chapters.length ? goToOverview : null"
+          :on-overview="null"
           @play="onPlayerPlay"
           @pause="onPlayerPause"
           @seeked="onPlayerSeeked"
@@ -55,6 +43,18 @@
           You are looking at variant 3
         </div>
       </div>
+
+      <!-- Chapter Overview sidebar: always visible on the right -->
+      <div v-if="chapters.length" class="col-12 col-lg-4 sidebar-chapters">
+        <ChapterOverview
+          :chapters="chapters"
+          :current-time="currentTime"
+          :duration="duration"
+          :range="range"
+          :video-url="url"
+          @seek="onChapterSeek"
+        />
+      </div>
     </div>
   </div>
 </template>
@@ -76,9 +76,7 @@ export default {
       headingId: "",
       currentTime: 0,
       duration: 0,
-      range: null,
-      showOverview: true,
-    };
+      range: null,    };
   },
   computed: {
     url() {
@@ -96,6 +94,16 @@ export default {
       }
       const lastChapter = this.chapters[this.chapters.length - 1];
       return this.range.start === lastChapter.time;
+    },
+  },
+  watch: {
+    chapters: {
+      immediate: true,
+      handler(chaps) {
+        if (chaps && chaps.length && !this.range) {
+          this.selectFirstChapter();
+        }
+      },
     },
   },
   mounted() {
@@ -128,6 +136,10 @@ export default {
         }
       }
     },
+    selectFirstChapter() {
+      if (!this.chapters.length) return;
+      this.onChapterSeek(this.chapters[0].time);
+    },
     onChapterSeek(time) {
       const idx = this.chapters.findIndex(ch => ch.time === time);
       if (idx === -1) return;
@@ -135,7 +147,6 @@ export default {
       const nextChapter = this.chapters[idx + 1];
       const end = nextChapter ? nextChapter.time : null;
       this.range = { start, end };
-      this.showOverview = false;
       this.onPlayerChapterSeek({
         context: "player3",
         action: "chapter-seek",
@@ -143,10 +154,6 @@ export default {
         currenttime: time,
         duration: this.duration,
       });
-    },
-    goToOverview() {
-      this.showOverview = true;
-      this.range = null;
     },
     onPlayerPlay(details) {
       this.log("play", details);
@@ -299,5 +306,23 @@ export default {
   background: #fef3c7;
   color: #92400e;
   border: 1px solid #fcd34d;
+}
+
+/* Sidebar: Chapter Overview as YouTube-style playlist */
+.sidebar-chapters {
+  max-height: calc(100vh - 120px);
+  overflow-y: auto;
+  border-left: 1px solid #e0e0e0;
+  padding-left: 1rem;
+}
+
+.sidebar-chapters .hypervideo-chapters-grid {
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 992px) {
+  .sidebar-chapters .hypervideo-chapters-grid {
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  }
 }
 </style>

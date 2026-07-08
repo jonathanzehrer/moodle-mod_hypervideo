@@ -5,27 +5,41 @@
     :aria-label="$t('chapters_nav')"
   >
     <h4 class="hypervideo-chapters-heading">{{ $t("chapters_title") }}</h4>
-    <ol class="hypervideo-chapters-list" role="list">
-      <li
+    <div class="hypervideo-chapters-grid" role="list">
+      <button
         v-for="(chapter, index) in chapters"
         :key="index"
-        class="hypervideo-chapters-item"
+        type="button"
+        class="hypervideo-chapters-tile"
         :class="{ 'is-active': index === activeIndex }"
+        :aria-label="$t('chapters_goto') + ' ' + chapter.title"
         :aria-current="index === activeIndex ? 'true' : undefined"
+        role="listitem"
+        @click="selectChapter(index, chapter.time)"
       >
-        <button
-          type="button"
-          class="hypervideo-chapters-button"
-          :aria-label="$t('chapters_goto') + ' ' + chapter.title"
-          @click="selectChapter(index, chapter.time)"
-        >
-          <span class="hypervideo-chapters-label">{{ chapter.title }}</span>
+        <div class="hypervideo-chapters-thumb">
+          <canvas
+            v-show="thumbnails[index]"
+            :ref="(el) => { if (el) thumbCanvasRefs[index] = el }"
+            class="hypervideo-chapters-thumb-canvas"
+            aria-hidden="true"
+          />
+          <svg
+            v-if="!thumbnails[index]"
+            class="hypervideo-chapters-thumb-svg"
+            viewBox="0 0 16 9"
+            xmlns="http://www.w3.org/2000/svg"
+            aria-hidden="true"
+          >
+            <rect width="16" height="9" fill="#e0e0e0" />
+          </svg>
           <span class="hypervideo-chapters-duration">{{
             segmentDurationText(index)
           }}</span>
-        </button>
-      </li>
-    </ol>
+        </div>
+        <span class="hypervideo-chapters-label">{{ chapter.title }}</span>
+      </button>
+    </div>
   </nav>
 </template>
 
@@ -48,11 +62,19 @@ export default {
       type: Object,
       default: null,
     },
+    videoUrl: {
+      type: String,
+      default: '',
+    },
   },
   emits: ["seek"],
   data() {
     return {
       activeIndex: 0,
+      /** Array of booleans: true when thumbnail canvas is drawn */
+      thumbnails: [],
+      /** Array populated by template ref callbacks – the <canvas> elements */
+      thumbCanvasRefs: [],
     };
   },
   computed: {
@@ -67,6 +89,10 @@ export default {
   },
   mounted() {
     this.updateActiveIndex();
+    this.generateThumbnails();
+  },
+  beforeUnmount() {
+    this.cancelThumbnails();
   },
   watch: {
     currentTime() {
@@ -74,6 +100,10 @@ export default {
     },
     chapters() {
       this.updateActiveIndex();
+      this.generateThumbnails();
+    },
+    videoUrl() {
+      this.generateThumbnails();
     },
     range: {
       handler() {
@@ -109,6 +139,99 @@ export default {
       if (dur == null) return "";
       return this.formatTime(Math.round(dur));
     },
+    generateThumbnails() {
+      this.cancelThumbnails();
+      this.thumbnails = this.chapters.map(() => false);
+      this.thumbCanvasRefs = [];
+
+      if (!this.videoUrl || !this.chapters.length) return;
+
+      const timestamps = this.chapters.map((c) => c.time);
+      this._cancelled = false;
+
+      const video = document.createElement('video');
+      // Do NOT set crossOrigin – the CDN doesn't send CORS headers.
+      // The canvas will be tainted but still renders the frame visually;
+      // we never call toDataURL, we keep the canvas elements in the DOM.
+      video.preload = 'auto';
+      video.muted = true;
+      video.playsInline = true;
+      video.style.position = 'absolute';
+      video.style.width = '1px';
+      video.style.height = '1px';
+      video.style.opacity = '0';
+      video.style.pointerEvents = 'none';
+
+      let currentIndex = 0;
+
+      video.addEventListener('loadedmetadata', () => {
+        if (this._cancelled) {
+          cleanup();
+          return;
+        }
+        const aspectHeight = Math.round(
+          (video.videoHeight / video.videoWidth) * 160
+        );
+        // Size the template canvases once we know the aspect ratio
+        this.thumbCanvasRefs.forEach((c) => {
+          if (c) {
+            c.width = 160;
+            c.height = aspectHeight;
+          }
+        });
+        seekToNext();
+      });
+
+      video.addEventListener('seeked', () => {
+        if (this._cancelled) return;
+        const canvas = this.thumbCanvasRefs[currentIndex];
+        if (canvas) {
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        }
+        // Mark ready so v-show reveals the canvas and v-if hides the SVG
+        this.thumbnails = this.thumbnails.map((v, i) =>
+          i === currentIndex ? true : v
+        );
+        currentIndex++;
+        if (currentIndex < timestamps.length) {
+          seekToNext();
+        } else {
+          cleanup();
+        }
+      });
+
+      video.addEventListener('error', () => {
+        cleanup();
+      });
+
+      document.body.appendChild(video);
+      video.src = this.videoUrl;
+      video.load();
+      this._videoEl = video;
+
+      const seekToNext = () => {
+        video.currentTime = timestamps[currentIndex];
+      };
+
+      const cleanup = () => {
+        if (video.parentNode) {
+          video.parentNode.removeChild(video);
+        }
+        video.removeAttribute('src');
+        this._videoEl = null;
+      };
+    },
+    cancelThumbnails() {
+      this._cancelled = true;
+      if (this._videoEl) {
+        if (this._videoEl.parentNode) {
+          this._videoEl.parentNode.removeChild(this._videoEl);
+        }
+        this._videoEl.removeAttribute('src');
+        this._videoEl = null;
+      }
+    },
     formatTime(seconds) {
       if (isNaN(seconds) || seconds === Infinity || seconds === 0) {
         return "0:00";
@@ -133,53 +256,74 @@ export default {
   margin-bottom: 0.5rem;
 }
 
-.hypervideo-chapters-list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-
-.hypervideo-chapters-item {
-  border-left: 3px solid transparent;
-  transition:
-    border-color 0.2s,
-    background-color 0.2s;
-}
-
-.hypervideo-chapters-item.is-active {
-  border-left-color: #0f6cbf;
-  background-color: rgba(15, 108, 191, 0.06);
-}
-
-.hypervideo-chapters-button {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
+.hypervideo-chapters-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
   gap: 0.75rem;
-  width: 100%;
-  padding: 0.4rem 0.75rem;
+}
+
+.hypervideo-chapters-tile {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 0;
   border: none;
   background: none;
   cursor: pointer;
   text-align: left;
   font-size: 0.9rem;
   color: inherit;
+  border-radius: 4px;
+  overflow: hidden;
+  transition: box-shadow 0.2s ease;
 }
 
-.hypervideo-chapters-button:hover,
-.hypervideo-chapters-button:focus-visible {
-  background-color: rgba(0, 0, 0, 0.05);
-  outline: 2px solid #0f6cbf;
-  outline-offset: -2px;
+.hypervideo-chapters-tile:hover,
+.hypervideo-chapters-tile:focus-visible {
+  box-shadow: 0 0 0 2px #0f6cbf;
+  outline: none;
 }
 
-.hypervideo-chapters-label {
-  flex: 1;
+.hypervideo-chapters-tile.is-active .hypervideo-chapters-thumb {
+  box-shadow: 0 0 0 2px #0f6cbf;
+}
+
+.hypervideo-chapters-thumb {
+  position: relative;
+  border-radius: 4px;
+  overflow: hidden;
+  aspect-ratio: 16 / 9;
+  background-color: #e0e0e0;
+}
+
+.hypervideo-chapters-thumb-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.hypervideo-chapters-thumb-svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .hypervideo-chapters-duration {
-  flex-shrink: 0;
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  padding: 0.1rem 0.3rem;
+  font-size: 0.75rem;
   font-variant-numeric: tabular-nums;
-  color: #666;
+  color: #fff;
+  background-color: rgba(0, 0, 0, 0.7);
+  border-top-left-radius: 3px;
+}
+
+.hypervideo-chapters-label {
+  padding: 0 0.15rem;
+  line-height: 1.3;
 }
 </style>

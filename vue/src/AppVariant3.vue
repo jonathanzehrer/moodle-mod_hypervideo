@@ -13,6 +13,7 @@
           :current-time="currentTime"
           :duration="duration"
           :range="range"
+          :video-url="url"
           @seek="onChapterSeek"
         />
       </div>

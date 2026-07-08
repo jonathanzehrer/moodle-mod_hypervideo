@@ -98,18 +98,4 @@ class mod_hypervideo_mod_form extends moodleform_mod {
         $errors = parent::validation($data, $files);
         return $errors;
     }
-
-    /**
-     * Load existing instance data into the form.
-     *
-     * @param array $defaultvalues Default values passed by reference
-     */
-    public function data_preprocessing(&$defaultvalues) {
-        parent::data_preprocessing($defaultvalues);
-
-        // Load playerstyle from saved instance, falling back to the default.
-        if (empty($defaultvalues['playerstyle'])) {
-            $defaultvalues['playerstyle'] = 'AppVariant1.vue';
-        }
-    }
 }

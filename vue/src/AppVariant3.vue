@@ -5,9 +5,8 @@
     :aria-label="title || $t('aria_videoplayer')"
   >
     <h3 v-if="title" class="hypervideo-title" :id="headingId">{{ title }}</h3>
-    <div class="row mt-3">
-      <!-- Video player: always visible on the left -->
-      <div :class="chapters.length ? 'col-12 col-lg-8' : 'col-12'">
+    <div class="variant">
+      <div class="player-container">
         <VideoPlayer
           ref="videoPlayer"
           :url="url"
@@ -48,13 +47,10 @@
             />
           </template>
         </VideoPlayer>
-        <div class="variant-indicator variant-3">
-          You are looking at variant 3
-        </div>
       </div>
 
       <!-- Chapter Overview sidebar: always visible on the right -->
-      <div v-if="chapters.length" class="col-12 col-lg-4 sidebar-chapters">
+      <div v-if="chapters.length" class="chapters-sidebar">
         <ChapterOverview
           :chapters="chapters"
           :current-time="currentTime"
@@ -280,59 +276,20 @@ export default {
 };
 </script>
 
-<style>
-.hypervideo {
+<style scoped>
+
+.variant {
+  display: flex;
+  gap: 1rem;
+}
+
+.chapters-sidebar {
+  width: 220px;
   position: relative;
 }
 
-.player-container {
-  width: 100%;
-  height: auto;
-}
-
 .hypervideo-title {
-  margin-bottom: 0;
+  margin-bottom: 1rem;
 }
 
-.hypervideo-error {
-  margin-top: 1rem;
-}
-
-.hypervideo-player {
-  width: 100%;
-  height: auto;
-}
-
-.variant-indicator {
-  margin-top: 0.75rem;
-  padding: 0.6rem 1rem;
-  border-radius: 6px;
-  font-weight: 600;
-  font-size: 0.95rem;
-  text-align: center;
-}
-
-.variant-3 {
-  background: #fef3c7;
-  color: #92400e;
-  border: 1px solid #fcd34d;
-}
-
-/* Sidebar: Chapter Overview as YouTube-style playlist */
-.sidebar-chapters {
-  max-height: calc(100vh - 120px);
-  overflow-y: auto;
-  border-left: 1px solid #e0e0e0;
-  padding-left: 1rem;
-}
-
-.sidebar-chapters .hypervideo-chapters-grid {
-  grid-template-columns: 1fr;
-}
-
-@media (min-width: 992px) {
-  .sidebar-chapters .hypervideo-chapters-grid {
-    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-  }
-}
 </style>

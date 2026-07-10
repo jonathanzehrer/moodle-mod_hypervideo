@@ -122,30 +122,6 @@ export default {
 
 <style scoped>
 
-.btn {
-  display: flex;
-  background: none;
-  border: none;
-  padding: 5px;
-  color: #444;
-  border-radius: 5px;
-  cursor: pointer;
-  font-size: 1rem;
-
-  transition: background 0.15s, color 0.15s;
-}
-
-.btn:hover{
-  background: #e9ecef;
-  color: #222;
-}
-
-.btn:focus-visible{
-  background: #e9ecef;
-  color: #222;
-  outline: 2px solid #004C97;
-}
-
 .volume-slider {
   width: 80px;
   height: 6px;

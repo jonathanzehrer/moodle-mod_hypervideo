@@ -33,7 +33,7 @@ import Communication from "./scripts/communication";
 // public-path assignment in the entry body runs).
 const cssReady = Promise.all([
   import("@fontsource-variable/material-symbols-rounded/standard.css"),
-  import("./styles/icons.css"),
+  import("./styles/player.css"),
 ]);
 
 /**

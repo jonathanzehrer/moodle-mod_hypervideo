@@ -1,36 +1,13 @@
 <template>
-  <div
-    class="hypervideo"
-    role="region"
-    :aria-label="title || $t('aria_videoplayer')"
-  >
+  <div class="hypervideo" role="region" :aria-label="title || $t('aria_videoplayer')">
     <h3 v-if="title" class="hypervideo-title" :id="headingId">{{ title }}</h3>
-    <div class="row mt-3">
-      <div class="col-12">
-        <VideoPlayer
-          ref="videoPlayer"
-          :url="url"
-          :title="title"
-          :heading-id="headingId"
-          @play="onPlayerPlay"
-          @pause="onPlayerPause"
-          @seeked="onPlayerSeeked"
-          @ended="onPlayerEnded"
-          @playback="onPlayerPlayback"
-          @timeline-seek="onPlayerTimelineSeek"
-          @button-seek="onPlayerButtonSeek"
-          @timeupdate="onPlayerTimeUpdate"
-          @ready="onPlayerReady"
-          @survey-response="onSurveyResponse"
-          @speed-change="onPlayerSpeedChange"
-          @fullscreen-change="onPlayerFullscreenChange"
-          @volume-change="onPlayerVolumeChange"
-          @mute-change="onPlayerMuteChange"
-        />
-        <div class="variant-indicator variant-1">
-          You are looking at variant 1
-        </div>
-      </div>
+    <div class="variant">
+      <VideoPlayer ref="videoPlayer" :url="url" :title="title" :heading-id="headingId" @play="onPlayerPlay"
+        @pause="onPlayerPause" @seeked="onPlayerSeeked" @ended="onPlayerEnded" @playback="onPlayerPlayback"
+        @timeline-seek="onPlayerTimelineSeek" @button-seek="onPlayerButtonSeek" @timeupdate="onPlayerTimeUpdate"
+        @ready="onPlayerReady" @survey-response="onSurveyResponse" @speed-change="onPlayerSpeedChange"
+        @fullscreen-change="onPlayerFullscreenChange" @volume-change="onPlayerVolumeChange"
+        @mute-change="onPlayerMuteChange" />
     </div>
   </div>
 </template>
@@ -148,27 +125,10 @@ export default {
 };
 </script>
 
-<style>
-.hypervideo {
-  position: relative;
-}
+<style scoped>
 
 .hypervideo-title {
-  margin-bottom: 0;
+  margin-bottom: 1rem;
 }
 
-.variant-indicator {
-  margin-top: 0.75rem;
-  padding: 0.6rem 1rem;
-  border-radius: 6px;
-  font-weight: 600;
-  font-size: 0.95rem;
-  text-align: center;
-}
-
-.variant-1 {
-  background: #dbeafe;
-  color: #1e40af;
-  border: 1px solid #93c5fd;
-}
 </style>

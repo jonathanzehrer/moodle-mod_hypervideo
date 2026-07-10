@@ -4,17 +4,6 @@
     @mouseenter="onMouseEnter"
     @mouseleave="onMouseLeave"
   >
-    <!-- Overview back button overlay, only rendered when onOverview is provided -->
-    <button
-      v-if="onOverview"
-      class="overview-back-btn"
-      :class="{ 'controls-hidden': !controlsVisible }"
-      :title="$t('back_to_overview')"
-      :aria-label="$t('back_to_overview')"
-      @click="onOverview"
-    >
-      <span class="material-symbols" aria-hidden="true">arrow_back</span>
-    </button>
 
     <!-- Fullscreen title overlay -->
     <div
@@ -81,7 +70,6 @@
       ref="videoEl"
       :src="url"
       preload="metadata"
-      class="hypervideo-player"
       :aria-label="title || $t('aria_videoplayer')"
       :aria-describedby="headingId"
       @click="handlePlayClick"
@@ -116,7 +104,7 @@
       <span :title="$t('currentTime')" class="video-time">{{ formatTime(displayedCurrentTime) }}</span>
       <button
         v-if="showPrevNext"
-        class="btn btn-prevnext"
+        class="btn"
         :disabled="!hasPrevious"
         :title="$t('previous_' + prevNextTitle)"
         @click="goToPrevious('controls')"
@@ -134,7 +122,7 @@
       <span :title="$t('duration')" class="video-time">{{ formatTime(displayedDuration) }}</span>
       <button
         v-if="showPrevNext"
-        class="btn btn-prevnext"
+        class="btn"
         :disabled="!hasNext"
         :title="$t('next_' + prevNextTitle)"
         @click="goToNext('controls')"
@@ -156,7 +144,7 @@
       />
 
       <button
-        class="btn btn-fullscreen"
+        class="btn"
         @click="toggleFullscreen"
         :title="isFullscreen ? $t('exit_fullscreen') : $t('fullscreen')"
       >
@@ -225,10 +213,6 @@ export default {
       default: null,
     },
     onNext: {
-      type: Function,
-      default: null,
-    },
-    onOverview: {
       type: Function,
       default: null,
     },
@@ -762,66 +746,40 @@ export default {
 </script>
 
 <style scoped>
+
 .player-container {
   width: fit-content;
   position: relative;
-  border-radius: 8px;
+
+  /* Round corners */
+  border-radius: var(--border-radius);
   overflow: hidden;
-}
-
-/* ---------- Overview Back Button ---------- */
-
-.overview-back-btn {
-  position: absolute;
-  top: 8px;
-  left: 8px;
-  z-index: 10;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 36px;
-  height: 36px;
-  border: none;
-  border-radius: 50%;
-  background-color: #fffa;
-  backdrop-filter: blur(4px);
-  color: #444;
-  cursor: pointer;
-  transition: background 0.2s, transform 0.15s, opacity 0.3s ease;
-}
-
-.overview-back-btn:hover,
-.overview-back-btn:focus-visible {
-  background: #fff;
-  color: #000;
-  transform: scale(1.1);
-  /* outline: 2px solid #fff; */
-}
-
-.overview-back-btn .material-symbols {
-  font-size: 1.25rem;
 }
 
 .hypervideo-error {
   margin-top: 1rem;
 }
 
-.hypervideo-player {
+.player-container > video {
   width: 100%;
   height: 100%;
   display: block;
 }
 
 .video-controls {
+  /* Positioning */
   position: absolute;
   bottom: 0;
   left: 0;
   right: 0;
+
+  /* Position items */
   display: flex;
   gap: 5px;
   padding: 5px;
   align-items: center;
-  background-color: #fffa;
+
+  background-color: var(--overlay-bg);
   backdrop-filter: blur(4px);
   z-index: 6;
   transition: opacity 0.3s ease;
@@ -836,7 +794,9 @@ export default {
   user-select: none;
 }
 
-.btn {
+/* ---------- Button styles ---------- */
+
+:deep(.btn) {
   display: flex;
   background: none;
   border: none;
@@ -849,29 +809,21 @@ export default {
   transition: background 0.15s, color 0.15s;
 }
 
-.btn:hover,
-.btn:focus-visible,
-.btn-prevnext:hover,
-.btn-prevnext:focus-visible {
+:deep(.btn:hover),
+:deep(.btn:focus-visible) {
   background: #e9ecef;
   color: #222;
 }
 
-.btn:focus-visible,
-.btn-prevnext:focus-visible {
+:deep(.btn:focus-visible) {
   background: #e9ecef;
   color: #222;
   outline: 2px solid #004C97;
 }
 
-.btn-prevnext:disabled {
+:deep(.btn:disabled) {
   opacity: 0.35;
   cursor: default;
-}
-
-.btn-prevnext:disabled:hover {
-  background: none;
-  color: #444;
 }
 
 /* ---------- Controls visibility ---------- */
@@ -891,17 +843,16 @@ export default {
   padding: 6px 14px;
   font-size: 1rem;
   font-weight: 600;
-  color: #fff;
-  background: rgba(0, 0, 0, 0.55);
+  background: var(--overlay-bg);
   backdrop-filter: blur(6px);
-  border-radius: 6px;
+  border-radius: var(--border-radius);
   max-width: calc(100% - 80px);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+
+  /* Allow clicking through the element */
   pointer-events: none;
-  user-select: none;
-  transition: left 0.25s ease, opacity 0.3s ease;
 }
 
 .fullscreen-title-overlay.title-shifted-left {

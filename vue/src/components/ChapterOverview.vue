@@ -245,27 +245,30 @@ export default {
 };
 </script>
 
-<style>
+<style scoped>
 .hypervideo-chapters {
-  margin-top: 0;
+  border-radius: var(--border-radius);
+  background-color: var(--light-bg);
+  overflow: hidden;
+  height: 100%;
 }
 
 .hypervideo-chapters-heading {
   font-size: 1rem;
   font-weight: 600;
-  margin-bottom: 0.5rem;
+  padding: 10px;
+  margin: 0;
   position: sticky;
   top: 0;
-  background-color: var(--body-bg, #fff);
+  background-color: var(--light-bg);
   z-index: 1;
-  padding-top: 0.25rem;
-  padding-bottom: 0.25rem;
 }
 
 .hypervideo-chapters-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-  gap: 0.75rem;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 10px;
+  padding: 10px;
 }
 
 .hypervideo-chapters-tile {
@@ -317,15 +320,16 @@ export default {
 }
 
 .hypervideo-chapters-duration {
+  font-family: monospace;
   position: absolute;
-  bottom: 0;
-  right: 0;
+  bottom: 5px;
+  right: 5px;
   padding: 0.1rem 0.3rem;
   font-size: 0.75rem;
   font-variant-numeric: tabular-nums;
-  color: #fff;
-  background-color: rgba(0, 0, 0, 0.7);
-  border-top-left-radius: 3px;
+  color: #000;
+  background-color: var(--overlay-bg);
+  border-radius: 5px;
 }
 
 .hypervideo-chapters-label {

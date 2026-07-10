@@ -5,8 +5,8 @@
     :aria-label="title || $t('aria_videoplayer')"
   >
     <h3 v-if="title" class="hypervideo-title" :id="headingId">{{ title }}</h3>
-    <div class="row mt-3">
-      <div v-if="chapters.length" class="col-md-3">
+    <div class="variant">
+      <div v-if="chapters.length" class="chapters-sidebar">
         <ChapterSidebar
           :chapters="chapters"
           :current-time="currentTime"
@@ -14,7 +14,7 @@
           @seek="seekTo"
         />
       </div>
-      <div :class="chapters.length ? 'col-md-9' : 'col-12'">
+      <div class="player-container">
         <VideoPlayer
           ref="videoPlayer"
           :url="url"
@@ -47,9 +47,6 @@
             />
           </template>
         </VideoPlayer>
-        <div class="variant-indicator variant-2">
-          You are looking at variant 2
-        </div>
       </div>
     </div>
   </div>
@@ -198,41 +195,20 @@ export default {
 };
 </script>
 
-<style>
-.hypervideo {
-  position: relative;
+<style scoped>
+
+
+.variant {
+  display: flex;
+  gap: 1rem;
 }
 
-.player-container {
-  width: 100%;
-  height: auto;
+.chapters-sidebar {
+  flex: 0 0 300px;
 }
 
 .hypervideo-title {
-  margin-bottom: 0;
+  margin-bottom: 1rem;
 }
 
-.hypervideo-error {
-  margin-top: 1rem;
-}
-
-.hypervideo-player {
-  width: 100%;
-  height: auto;
-}
-
-.variant-indicator {
-  margin-top: 0.75rem;
-  padding: 0.6rem 1rem;
-  border-radius: 6px;
-  font-weight: 600;
-  font-size: 0.95rem;
-  text-align: center;
-}
-
-.variant-2 {
-  background: #d1fae5;
-  color: #065f46;
-  border: 1px solid #6ee7b7;
-}
 </style>

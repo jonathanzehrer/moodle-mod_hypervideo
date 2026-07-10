@@ -173,27 +173,11 @@ export default {
 }
 
 .btn-speed {
-  display: flex;
-  background: none;
-  border: none;
-  padding: 5px;
-  color: #444;
-  border-radius: 5px;
-  cursor: pointer;
-  font-size: 0.85rem;
+  font-size: 0.85rem !important;
   font-family: monospace;
+  color: #444;
   min-width: 3rem;
   justify-content: center;
-  transition: background 0.15s, color 0.15s;
-}
-
-.btn-speed:hover {
-  background: #e9ecef;
-  color: #222;
-}
-
-.btn-speed:focus-visible {
-  outline: 2px solid #004C97;
 }
 
 .speed-menu {
@@ -228,8 +212,8 @@ export default {
 }
 
 .speed-option--active {
-  color: #004C97;
-  background-color: #004C9730;
+  color: var(--accent-color);
+  background-color: rgba(var(--accent-color-rgb), 0.1);
   font-weight: 600;
 }
 

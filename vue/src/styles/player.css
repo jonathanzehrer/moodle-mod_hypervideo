@@ -12,3 +12,11 @@
   direction: ltr;
   font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 24;
 }
+
+:root {
+  --border-radius: 8px;
+  --light-bg: #f4f4f4;
+  --accent-color: #004C97;
+  --accent-color-rgb: 0, 76, 151;
+  --overlay-bg: #fffa;
+}

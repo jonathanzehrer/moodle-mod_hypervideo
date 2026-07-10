@@ -75,42 +75,49 @@ export default {
 };
 </script>
 
-<style>
+<style scoped>
 .hypervideo-chapters {
-  margin-top: 0;
+  border-radius: var(--border-radius);
+  background-color: var(--light-bg);
+  overflow: hidden;
+  height: 100%;
 }
 
 .hypervideo-chapters-heading {
   font-size: 1rem;
   font-weight: 600;
-  margin-bottom: 0.5rem;
+  padding: 10px;
+  margin: 0;
   position: sticky;
   top: 0;
-  background-color: var(--body-bg, #fff);
+  background-color: var(--light-bg);
   z-index: 1;
-  padding-top: 0.25rem;
-  padding-bottom: 0.25rem;
 }
 
 .hypervideo-chapters-list {
   list-style: none;
-  padding: 0;
+  padding: 5px;
   margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
 }
 
 .hypervideo-chapters-item {
-  border-left: 3px solid transparent;
+  border-radius: var(--border-radius);
+  border: 1px solid transparent;
   transition:
     border-color 0.2s,
     background-color 0.2s;
 }
 
 .hypervideo-chapters-item.is-active {
-  border-left-color: #0f6cbf;
-  background-color: rgba(15, 108, 191, 0.06);
+  border-color: var(--accent-color);
+  background-color: rgba(var(--accent-color-rgb), 0.06);
 }
 
 .hypervideo-chapters-button {
+  border-radius: var(--border-radius);
   display: flex;
   align-items: baseline;
   gap: 0.75rem;
@@ -127,8 +134,7 @@ export default {
 .hypervideo-chapters-button:hover,
 .hypervideo-chapters-button:focus-visible {
   background-color: rgba(0, 0, 0, 0.05);
-  outline: 2px solid #0f6cbf;
-  outline-offset: -2px;
+  box-shadow: 0 0 0 2px var(--accent-color);
 }
 
 .hypervideo-chapters-time {

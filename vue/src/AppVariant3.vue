@@ -9,7 +9,6 @@
       <!-- Video player: always visible on the left -->
       <div :class="chapters.length ? 'col-12 col-lg-8' : 'col-12'">
         <VideoPlayer
-          v-if="range"
           ref="videoPlayer"
           :url="url"
           :title="title"
@@ -49,9 +48,6 @@
             />
           </template>
         </VideoPlayer>
-        <div v-if="!range" class="chapter-placeholder">
-          Select a chapter to start watching
-        </div>
         <div class="variant-indicator variant-3">
           You are looking at variant 3
         </div>
@@ -89,7 +85,9 @@ export default {
       headingId: "",
       currentTime: 0,
       duration: 0,
-      range: null,    };
+      range: { start: 0, end: null },
+      rangeSet: false,
+    };
   },
   computed: {
     url() {
@@ -102,9 +100,11 @@ export default {
       return this.$store.state.chapters;
     },
     enableSurvey() {
-      if (!this.range || this.chapters.length === 0) {
-        return false;
+      // No chapters: full video mode — survey shows at the end
+      if (this.chapters.length === 0) {
+        return true;
       }
+      // Chapters: survey only on the last chapter
       const lastChapter = this.chapters[this.chapters.length - 1];
       return this.range.start === lastChapter.time;
     },
@@ -120,7 +120,7 @@ export default {
     chapters: {
       immediate: true,
       handler(chaps) {
-        if (chaps && chaps.length && !this.range) {
+        if (chaps && chaps.length && !this.rangeSet) {
           this.selectFirstChapter();
         }
       },
@@ -166,6 +166,7 @@ export default {
       const start = time;
       const nextChapter = this.chapters[idx + 1];
       const end = nextChapter ? nextChapter.time : null;
+      this.rangeSet = true;
       this.range = { start, end };
       this.onPlayerChapterSeek({
         context: "player3",
@@ -206,6 +207,7 @@ export default {
     onPlayerReady({ duration }) {
       this.duration = duration;
       if (this.range && this.range.end == null) {
+        this.rangeSet = true;
         this.range = { ...this.range, end: duration };
       }
     },
@@ -299,18 +301,6 @@ export default {
 .hypervideo-player {
   width: 100%;
   height: auto;
-}
-
-.chapter-placeholder {
-  padding: 2rem;
-  text-align: center;
-  color: #666;
-  border: 2px dashed #ccc;
-  border-radius: 8px;
-  min-height: 200px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
 }
 
 .variant-indicator {

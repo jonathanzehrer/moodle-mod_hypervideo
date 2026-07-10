@@ -82,6 +82,10 @@ if (!empty($hypervideo->chapters)) {
             $chapters[] = ['time' => $seconds, 'title' => clean_param($m[2], PARAM_TEXT)];
         }
     }
+    // Sort chapters by time in case they were defined out of order.
+    usort($chapters, function($a, $b) {
+        return $a['time'] - $b['time'];
+    });
 }
 
 $initialdata = [

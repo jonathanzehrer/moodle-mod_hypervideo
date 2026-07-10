@@ -134,13 +134,13 @@
         :video="video"
         :initial-volume="volume"
         :initial-muted="isMuted"
-        @volume-change="(e) => $emit('volume-change', e)"
-        @mute-change="(e) => $emit('mute-change', e)"
+        @volume-change="onVolumeChange"
+        @mute-change="onMuteChange"
       />
 
       <PlaybackSpeedControl
         :video="video"
-        @speed-change="(e) => $emit('speed-change', e)"
+        @speed-change="onSpeedChange"
       />
 
       <button
@@ -229,6 +229,10 @@ export default {
       default: 'right',
       validator: (v) => ['left', 'right'].includes(v),
     },
+    logger: {
+      type: Object,
+      default: null,
+    },
   },
   components: {
     EndedOverlay,
@@ -250,6 +254,8 @@ export default {
     'survey-response',
     'speed-change',
     'fullscreen-change',
+    'volume-change',
+    'mute-change',
   ],
   data() {
     return {
@@ -460,6 +466,13 @@ export default {
       const curr = this.video.currentTime || 0;
       const currentinterval = curr > 0 ? Math.round(curr / this.interval) : 0;
       if (currentinterval !== this.lastposition) {
+        this.logger?.add('playback', {
+          context: 'player',
+          action: 'playback',
+          values: currentinterval,
+          currenttime: this.video.currentTime,
+          duration: this.video.duration,
+        });
         this.$emit('playback', {
           context: "player",
           action: "playback",
@@ -475,9 +488,16 @@ export default {
       this.video = this.$refs.videoEl;
       this.isPaused = false;
       this.hasEnded = false;
+      this.logger?.add('play', {
+        context: 'player',
+        action: 'play',
+        values: '',
+        currenttime: this.video ? this.video.currentTime : 0,
+        duration: this.video ? this.video.duration : 0,
+      });
       this.$emit('play', {
-        context: "player",
-        action: "play",
+        context: 'player',
+        action: 'play',
         values: "",
         currenttime: this.video ? this.video.currentTime : 0,
         duration: this.video ? this.video.duration : 0,
@@ -493,6 +513,13 @@ export default {
         return;
       }
       this.isPaused = true;
+      this.logger?.add('pause', {
+        context: 'player',
+        action: 'pause',
+        values: '',
+        currenttime: this.video.currentTime,
+        duration: this.video.duration,
+      });
       this.$emit('pause', {
         context: "player",
         action: "pause",
@@ -521,6 +548,13 @@ export default {
         this.video.currentTime = time;
         this.currentTime = time;
         if (!silent) {
+          this.logger?.add('timeline-seek', {
+            context: 'player',
+            action: 'timeline-seek',
+            values: time,
+            currenttime: time,
+            duration: this.video.duration,
+          });
           this.$emit('timeline-seek', {
             context: "player",
             action: "timeline-seek",
@@ -549,6 +583,18 @@ export default {
       const to = this.video.currentTime;
       const distance = to - from;
       const direction = distance >= 0 ? "forward" : "backward";
+      this.logger?.add('seeked', {
+        context: 'player',
+        action: 'seeked',
+        values: JSON.stringify({
+          from: from,
+          to: to,
+          distance: distance,
+          direction: direction,
+        }),
+        currenttime: this.video.currentTime,
+        duration: this.video.duration,
+      });
       this.$emit('seeked', {
         context: "player",
         action: "seeked",
@@ -570,6 +616,13 @@ export default {
       }
       this.hasEnded = true;
       this.isPaused = true;
+      this.logger?.add('ended', {
+        context: 'player',
+        action: 'ended',
+        values: '',
+        currenttime: this.video.currentTime,
+        duration: this.video.duration,
+      });
       this.$emit('ended', {
         context: "player",
         action: "ended",
@@ -642,6 +695,13 @@ export default {
     onFullscreenChange() {
       this.isFullscreen = !!document.fullscreenElement;
       this.showSidebar = false;
+      this.logger?.add('fullscreen-change', {
+        context: 'player',
+        action: 'fullscreen-change',
+        values: this.isFullscreen ? 'enter' : 'exit',
+        currenttime: this.video ? this.video.currentTime : 0,
+        duration: this.video ? this.video.duration : 0,
+      });
       this.$emit('fullscreen-change', {
         context: 'player',
         action: 'fullscreen-change',
@@ -673,6 +733,13 @@ export default {
         // storage full or unavailable — silently ignore
       }
       this.showSurvey = false;
+      this.logger?.add('survey_response', {
+        context: 'media_hypervideo',
+        action: 'survey_response',
+        values: rating,
+        currenttime: 0,
+        duration: 0,
+      });
       this.$emit('survey-response', rating);
     },
     goToPrevious(source = 'controls') {
@@ -721,6 +788,13 @@ export default {
     },
     emitButtonSeek(source, direction) {
       if (!this.video) return;
+      this.logger?.add('button-seek', {
+        context: 'player',
+        action: 'button-seek',
+        values: source + '-' + direction,
+        currenttime: this.currentTime,
+        duration: this.video.duration,
+      });
       this.$emit('button-seek', {
         context: 'player',
         action: 'button-seek',
@@ -737,6 +811,18 @@ export default {
           this.video.play().catch(() => {});
         }
       });
+    },
+    onVolumeChange(e) {
+      this.logger?.add('volume-change', e);
+      this.$emit('volume-change', e);
+    },
+    onMuteChange(e) {
+      this.logger?.add('mute-change', e);
+      this.$emit('mute-change', e);
+    },
+    onSpeedChange(e) {
+      this.logger?.add('speed-change', e);
+      this.$emit('speed-change', e);
     },
     onSurveyDismiss() {
       this.showSurvey = false;

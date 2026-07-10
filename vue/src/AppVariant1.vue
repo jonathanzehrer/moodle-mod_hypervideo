@@ -2,12 +2,12 @@
   <div class="hypervideo" role="region" :aria-label="title || $t('aria_videoplayer')">
     <h3 v-if="title" class="hypervideo-title" :id="headingId">{{ title }}</h3>
     <div class="variant">
-      <VideoPlayer ref="videoPlayer" :url="url" :title="title" :heading-id="headingId" @play="onPlayerPlay"
-        @pause="onPlayerPause" @seeked="onPlayerSeeked" @ended="onPlayerEnded" @playback="onPlayerPlayback"
-        @timeline-seek="onPlayerTimelineSeek" @button-seek="onPlayerButtonSeek" @timeupdate="onPlayerTimeUpdate"
-        @ready="onPlayerReady" @survey-response="onSurveyResponse" @speed-change="onPlayerSpeedChange"
-        @fullscreen-change="onPlayerFullscreenChange" @volume-change="onPlayerVolumeChange"
-        @mute-change="onPlayerMuteChange" />
+      <VideoPlayer
+        ref="videoPlayer" 
+        :url="url"
+        :title="title"
+        :heading-id="headingId"
+        :logger="logger" />
     </div>
   </div>
 </template>
@@ -66,59 +66,6 @@ export default {
         if (this.$refs.videoPlayer) {
           this.$refs.videoPlayer.setInitialProgress(parsed.videoprogress);
         }
-      }
-    },
-    onPlayerPlay(details) {
-      this.log("play", details);
-    },
-    onPlayerPause(details) {
-      this.log("pause", details);
-    },
-    onPlayerSeeked(details) {
-      this.log("seeked", details);
-    },
-    onPlayerEnded(details) {
-      this.log("ended", details);
-    },
-    onPlayerPlayback(details) {
-      this.log("playback", details);
-    },
-    onPlayerTimelineSeek(details) {
-      this.log("timeline-seek", details);
-    },
-    onPlayerButtonSeek(details) {
-      this.log("button-seek", details);
-    },
-    onPlayerTimeUpdate({ currentTime, duration }) {
-      // Time info available if needed by parent
-    },
-    onPlayerReady({ duration }) {
-      // Duration available if needed by parent
-    },
-    onSurveyResponse(rating) {
-      this.log('survey_response', {
-        context: 'media_hypervideo',
-        action: 'survey_response',
-        values: rating,
-        currenttime: 0,
-        duration: 0,
-      });
-    },
-    onPlayerSpeedChange(details) {
-      this.log('speed-change', details);
-    },
-    onPlayerFullscreenChange(details) {
-      this.log('fullscreen-change', details);
-    },
-    onPlayerVolumeChange(details) {
-      this.log('volume-change', details);
-    },
-    onPlayerMuteChange(details) {
-      this.log('mute-change', details);
-    },
-    log(key, values) {
-      if (this.logger) {
-        this.logger.add(key, values);
       }
     },
   },

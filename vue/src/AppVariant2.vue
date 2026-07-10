@@ -22,21 +22,10 @@
           :heading-id="headingId"
           :chapters="chapters"
           :current-chapter-title="currentChapterTitle"
+          :logger="logger"
           fullscreen-sidebar-position="left"
-          @play="onPlayerPlay"
-          @pause="onPlayerPause"
-          @seeked="onPlayerSeeked"
-          @ended="onPlayerEnded"
-          @playback="onPlayerPlayback"
-          @timeline-seek="onPlayerTimelineSeek"
-          @button-seek="onPlayerButtonSeek"
           @timeupdate="onPlayerTimeUpdate"
           @ready="onPlayerReady"
-          @survey-response="onSurveyResponse"
-          @speed-change="onPlayerSpeedChange"
-          @fullscreen-change="onPlayerFullscreenChange"
-          @volume-change="onPlayerVolumeChange"
-          @mute-change="onPlayerMuteChange"
         >
           <template #fullscreen-sidebar>
             <ChapterSidebar
@@ -134,29 +123,10 @@ export default {
         this.$refs.videoPlayer.seekTo(time, true);
       }
     },
-    onPlayerPlay(details) {
-      this.log("play", details);
-    },
-    onPlayerPause(details) {
-      this.log("pause", details);
-    },
-    onPlayerSeeked(details) {
-      this.log("seeked", details);
-    },
-    onPlayerEnded(details) {
-      this.log("ended", details);
-    },
-    onPlayerPlayback(details) {
-      this.log("playback", details);
-    },
     onPlayerChapterSeek(details) {
-      this.log("chapter-seek", details);
-    },
-    onPlayerTimelineSeek(details) {
-      this.log("timeline-seek", details);
-    },
-    onPlayerButtonSeek(details) {
-      this.log("button-seek", details);
+      if (this.logger) {
+        this.logger.add("chapter-seek", details);
+      }
     },
     onPlayerTimeUpdate({ currentTime, duration }) {
       this.currentTime = currentTime;
@@ -164,32 +134,6 @@ export default {
     },
     onPlayerReady({ duration }) {
       this.duration = duration;
-    },
-    onSurveyResponse(rating) {
-      this.log('survey_response', {
-        context: 'media_hypervideo',
-        action: 'survey_response',
-        values: rating,
-        currenttime: 0,
-        duration: 0,
-      });
-    },
-    onPlayerSpeedChange(details) {
-      this.log('speed-change', details);
-    },
-    onPlayerFullscreenChange(details) {
-      this.log('fullscreen-change', details);
-    },
-    onPlayerVolumeChange(details) {
-      this.log('volume-change', details);
-    },
-    onPlayerMuteChange(details) {
-      this.log('mute-change', details);
-    },
-    log(key, values) {
-      if (this.logger) {
-        this.logger.add(key, values);
-      }
     },
   },
 };

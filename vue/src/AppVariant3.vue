@@ -20,21 +20,10 @@
           :on-previous="goToPreviousChapter"
           :on-next="goToNextChapter"
           :on-overview="null"
+          :logger="logger"
           fullscreen-sidebar-position="right"
-          @play="onPlayerPlay"
-          @pause="onPlayerPause"
-          @seeked="onPlayerSeeked"
-          @ended="onPlayerEnded"
-          @playback="onPlayerPlayback"
-          @timeline-seek="onPlayerTimelineSeek"
-          @button-seek="onPlayerButtonSeek"
           @timeupdate="onPlayerTimeUpdate"
           @ready="onPlayerReady"
-          @survey-response="onSurveyResponse"
-          @speed-change="onPlayerSpeedChange"
-          @fullscreen-change="onPlayerFullscreenChange"
-          @volume-change="onPlayerVolumeChange"
-          @mute-change="onPlayerMuteChange"
         >
           <template #fullscreen-sidebar>
             <ChapterOverview
@@ -164,37 +153,15 @@ export default {
       const end = nextChapter ? nextChapter.time : null;
       this.rangeSet = true;
       this.range = { start, end };
-      this.onPlayerChapterSeek({
-        context: "player3",
-        action: "chapter-seek",
-        values: time,
-        currenttime: time,
-        duration: this.duration,
-      });
-    },
-    onPlayerPlay(details) {
-      this.log("play", details);
-    },
-    onPlayerPause(details) {
-      this.log("pause", details);
-    },
-    onPlayerSeeked(details) {
-      this.log("seeked", details);
-    },
-    onPlayerEnded(details) {
-      this.log("ended", details);
-    },
-    onPlayerPlayback(details) {
-      this.log("playback", details);
-    },
-    onPlayerChapterSeek(details) {
-      this.log("chapter-seek", details);
-    },
-    onPlayerTimelineSeek(details) {
-      this.log("timeline-seek", details);
-    },
-    onPlayerButtonSeek(details) {
-      this.log("button-seek", details);
+      if (this.logger) {
+        this.logger.add("chapter-seek", {
+          context: "player3",
+          action: "chapter-seek",
+          values: time,
+          currenttime: time,
+          duration: this.duration,
+        });
+      }
     },
     onPlayerTimeUpdate({ currentTime, duration }) {
       this.currentTime = currentTime;
@@ -222,27 +189,6 @@ export default {
         video.remove();
       });
     },
-    onSurveyResponse(rating) {
-      this.log('survey_response', {
-        context: 'media_hypervideo',
-        action: 'survey_response',
-        values: rating,
-        currenttime: 0,
-        duration: 0,
-      });
-    },
-    onPlayerSpeedChange(details) {
-      this.log('speed-change', details);
-    },
-    onPlayerFullscreenChange(details) {
-      this.log('fullscreen-change', details);
-    },
-    onPlayerVolumeChange(details) {
-      this.log('volume-change', details);
-    },
-    onPlayerMuteChange(details) {
-      this.log('mute-change', details);
-    },
     goToPreviousChapter() {
       const sorted = [...this.chapters].sort((a, b) => a.time - b.time);
       const currentStart = this.range ? this.range.start : 0;
@@ -265,11 +211,6 @@ export default {
           this.onChapterSeek(sorted[i].time);
           return;
         }
-      }
-    },
-    log(key, values) {
-      if (this.logger) {
-        this.logger.add(key, values);
       }
     },
   },

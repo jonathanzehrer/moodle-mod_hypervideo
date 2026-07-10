@@ -21,6 +21,8 @@
           :title="title"
           :heading-id="headingId"
           :chapters="chapters"
+          :current-chapter-title="currentChapterTitle"
+          fullscreen-sidebar-position="left"
           @play="onPlayerPlay"
           @pause="onPlayerPause"
           @seeked="onPlayerSeeked"
@@ -35,7 +37,16 @@
           @fullscreen-change="onPlayerFullscreenChange"
           @volume-change="onPlayerVolumeChange"
           @mute-change="onPlayerMuteChange"
-        />
+        >
+          <template #fullscreen-sidebar>
+            <ChapterSidebar
+              :chapters="chapters"
+              :current-time="currentTime"
+              :duration="duration"
+              @seek="seekTo"
+            />
+          </template>
+        </VideoPlayer>
         <div class="variant-indicator variant-2">
           You are looking at variant 2
         </div>
@@ -72,6 +83,17 @@ export default {
     },
     chapters() {
       return this.$store.state.chapters;
+    },
+    currentChapterTitle() {
+      if (!this.chapters.length || this.currentTime < 0) return '';
+      const sorted = [...this.chapters].sort((a, b) => a.time - b.time);
+      let title = '';
+      for (let i = 0; i < sorted.length; i++) {
+        if (this.currentTime >= sorted[i].time) {
+          title = sorted[i].title;
+        }
+      }
+      return title;
     },
   },
   mounted() {

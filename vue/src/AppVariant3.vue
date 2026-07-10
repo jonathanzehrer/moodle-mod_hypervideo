@@ -22,6 +22,7 @@
           :on-previous="goToPreviousChapter"
           :on-next="goToNextChapter"
           :on-overview="null"
+          fullscreen-sidebar-position="right"
           @play="onPlayerPlay"
           @pause="onPlayerPause"
           @seeked="onPlayerSeeked"
@@ -36,7 +37,18 @@
           @fullscreen-change="onPlayerFullscreenChange"
           @volume-change="onPlayerVolumeChange"
           @mute-change="onPlayerMuteChange"
-        />
+        >
+          <template #fullscreen-sidebar>
+            <ChapterOverview
+              :chapters="chapters"
+              :current-time="currentTime"
+              :duration="duration"
+              :range="range"
+              :video-url="url"
+              @seek="onChapterSeek"
+            />
+          </template>
+        </VideoPlayer>
         <div v-if="!range" class="chapter-placeholder">
           Select a chapter to start watching
         </div>

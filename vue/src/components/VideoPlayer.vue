@@ -20,9 +20,41 @@
     <div
       v-if="title && isFullscreen"
       class="fullscreen-title-overlay"
+      :class="{
+        'controls-hidden': !controlsVisible,
+        'title-shifted-left': fullscreenSidebarPosition === 'left',
+      }"
       :aria-label="fullscreenTitleText"
     >
       {{ fullscreenTitleText }}
+    </div>
+
+    <!-- Fullscreen sidebar overlay (only when slot is provided) -->
+    <div
+      v-if="isFullscreen && $slots['fullscreen-sidebar']"
+      class="fullscreen-sidebar-wrapper"
+      :class="[
+        `fs-sidebar-${fullscreenSidebarPosition}`,
+        { 'controls-hidden': !controlsVisible },
+      ]"
+      @mouseleave="showSidebar = false"
+    >
+      <div
+        class="fullscreen-sidebar-trigger"
+        @mouseenter="showSidebar = true"
+        :aria-label="showSidebar ? $t('hide_sidebar') : $t('show_sidebar')"
+      >
+        <span class="material-symbols" aria-hidden="true">
+          {{ fullscreenSidebarPosition === 'right' ? 'chevron_left' : 'chevron_right' }}
+        </span>
+      </div>
+      <div
+        v-show="showSidebar"
+        class="fullscreen-sidebar-content"
+        @mouseenter="showSidebar = true"
+      >
+        <slot name="fullscreen-sidebar" />
+      </div>
     </div>
 
     <!-- Player error -->
@@ -208,6 +240,11 @@ export default {
       type: String,
       default: '',
     },
+    fullscreenSidebarPosition: {
+      type: String,
+      default: 'right',
+      validator: (v) => ['left', 'right'].includes(v),
+    },
   },
   components: {
     EndedOverlay,
@@ -253,6 +290,7 @@ export default {
       isHovering: false,
       isFocused: false,
       controlsVisible: true,
+      showSidebar: false,
     };
   },
   mounted() {
@@ -619,6 +657,7 @@ export default {
     },
     onFullscreenChange() {
       this.isFullscreen = !!document.fullscreenElement;
+      this.showSidebar = false;
       this.$emit('fullscreen-change', {
         context: 'player',
         action: 'fullscreen-change',
@@ -862,5 +901,112 @@ export default {
   white-space: nowrap;
   pointer-events: none;
   user-select: none;
+  transition: left 0.25s ease, opacity 0.3s ease;
+}
+
+.fullscreen-title-overlay.title-shifted-left {
+  left: 44px;
+  max-width: calc(100% - 84px);
+}
+
+/* ---------- Fullscreen sidebar ---------- */
+
+.fullscreen-sidebar-wrapper {
+  position: absolute;
+  top: 0;
+  bottom: 44px;
+  z-index: 20;
+  display: flex;
+  transition: opacity 0.3s ease;
+}
+
+.fs-sidebar-right {
+  right: 0;
+  flex-direction: row-reverse;
+}
+
+.fs-sidebar-left {
+  left: 0;
+  flex-direction: row;
+}
+
+.fullscreen-sidebar-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  flex-shrink: 0;
+  background: rgba(0, 0, 0, 0.45);
+  cursor: pointer;
+  transition: background 0.2s;
+  color: #fff;
+  user-select: none;
+}
+
+.fullscreen-sidebar-trigger:hover,
+.fullscreen-sidebar-trigger:focus-visible {
+  background: rgba(0, 0, 0, 0.7);
+  outline: 2px solid #fff;
+  outline-offset: -2px;
+}
+
+.fullscreen-sidebar-trigger .material-symbols {
+  font-size: 1.25rem;
+}
+
+.fullscreen-sidebar-content {
+  width: 320px;
+  max-height: 100%;
+  overflow-y: auto;
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(8px);
+  color: #eee;
+  padding: 1rem;
+  padding-bottom: 1rem;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+}
+
+/* Darken chapter components inside the fullscreen sidebar */
+.fullscreen-sidebar-content .hypervideo-chapters-heading {
+  color: #fff;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+  padding-bottom: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.fullscreen-sidebar-content .hypervideo-chapters-time {
+  color: #aaa;
+}
+
+.fullscreen-sidebar-content .hypervideo-chapters-item.is-active {
+  border-left-color: #64b5f6;
+  background-color: rgba(100, 181, 246, 0.12);
+}
+
+.fullscreen-sidebar-content .hypervideo-chapters-button:hover,
+.fullscreen-sidebar-content .hypervideo-chapters-button:focus-visible {
+  background-color: rgba(255, 255, 255, 0.1);
+  outline-color: #64b5f6;
+}
+
+.fullscreen-sidebar-content .hypervideo-chapters-tile {
+  color: #eee;
+}
+
+.fullscreen-sidebar-content .hypervideo-chapters-tile:hover,
+.fullscreen-sidebar-content .hypervideo-chapters-tile:focus-visible {
+  box-shadow: 0 0 0 2px #64b5f6;
+}
+
+.fullscreen-sidebar-content .hypervideo-chapters-tile.is-active .hypervideo-chapters-thumb {
+  box-shadow: 0 0 0 2px #64b5f6;
+}
+
+.fullscreen-sidebar-content .hypervideo-chapters-thumb {
+  background-color: #333;
+}
+
+.fullscreen-sidebar-content .hypervideo-chapters-duration {
+  background-color: rgba(0, 0, 0, 0.8);
 }
 </style>

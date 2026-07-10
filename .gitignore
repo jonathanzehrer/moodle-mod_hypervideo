@@ -1,3 +1,4 @@
 /vue/node_modules/
 amd/
 .DS_Store
+/vue/test-results/

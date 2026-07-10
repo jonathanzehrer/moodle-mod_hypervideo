@@ -16,6 +16,15 @@
       <span class="material-symbols" aria-hidden="true">arrow_back</span>
     </button>
 
+    <!-- Fullscreen title overlay -->
+    <div
+      v-if="title && isFullscreen"
+      class="fullscreen-title-overlay"
+      :aria-label="fullscreenTitleText"
+    >
+      {{ fullscreenTitleText }}
+    </div>
+
     <!-- Player error -->
     <div
       v-if="videoError"
@@ -195,6 +204,10 @@ export default {
       type: Boolean,
       default: true,
     },
+    currentChapterTitle: {
+      type: String,
+      default: '',
+    },
   },
   components: {
     EndedOverlay,
@@ -281,6 +294,12 @@ export default {
         return this.effectiveMax - this.effectiveMin;
       }
       return this.effectiveMax;
+    },
+    fullscreenTitleText() {
+      if (this.currentChapterTitle) {
+        return `${this.title} - ${this.currentChapterTitle}`;
+      }
+      return this.title;
     },
     displayChapters() {
       if (!this.chapters || !this.chapters.length || !this.video) return [];
@@ -821,5 +840,27 @@ export default {
 .controls-hidden {
   opacity: 0;
   pointer-events: none;
+}
+
+/* ---------- Fullscreen title overlay ---------- */
+
+.fullscreen-title-overlay {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 11;
+  padding: 6px 14px;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(6px);
+  border-radius: 6px;
+  max-width: calc(100% - 80px);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  pointer-events: none;
+  user-select: none;
 }
 </style>

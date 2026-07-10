@@ -16,6 +16,7 @@
           :heading-id="headingId"
           :range="range"
           :chapters="chapters"
+          :current-chapter-title="currentChapterTitle"
           :show-chapter-marks="false"
           :enable-survey="enableSurvey"
           :on-previous="goToPreviousChapter"
@@ -94,6 +95,13 @@ export default {
       }
       const lastChapter = this.chapters[this.chapters.length - 1];
       return this.range.start === lastChapter.time;
+    },
+    currentChapter() {
+      if (!this.range || !this.chapters.length) return null;
+      return this.chapters.find(ch => ch.time === this.range.start) || null;
+    },
+    currentChapterTitle() {
+      return this.currentChapter ? this.currentChapter.title : '';
     },
   },
   watch: {

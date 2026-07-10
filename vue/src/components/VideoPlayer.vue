@@ -967,46 +967,47 @@ export default {
 }
 
 /* Darken chapter components inside the fullscreen sidebar */
-.fullscreen-sidebar-content .hypervideo-chapters-heading {
+.fullscreen-sidebar-content :deep(.hypervideo-chapters-heading) {
   color: #fff;
+  background-color: rgba(0, 0, 0, 0.85);
   border-bottom: 1px solid rgba(255, 255, 255, 0.15);
   padding-bottom: 0.5rem;
   margin-bottom: 0.75rem;
 }
 
-.fullscreen-sidebar-content .hypervideo-chapters-time {
+.fullscreen-sidebar-content :deep(.hypervideo-chapters-time) {
   color: #aaa;
 }
 
-.fullscreen-sidebar-content .hypervideo-chapters-item.is-active {
+.fullscreen-sidebar-content :deep(.hypervideo-chapters-item.is-active) {
   border-left-color: #64b5f6;
   background-color: rgba(100, 181, 246, 0.12);
 }
 
-.fullscreen-sidebar-content .hypervideo-chapters-button:hover,
-.fullscreen-sidebar-content .hypervideo-chapters-button:focus-visible {
+.fullscreen-sidebar-content :deep(.hypervideo-chapters-button:hover),
+.fullscreen-sidebar-content :deep(.hypervideo-chapters-button:focus-visible) {
   background-color: rgba(255, 255, 255, 0.1);
   outline-color: #64b5f6;
 }
 
-.fullscreen-sidebar-content .hypervideo-chapters-tile {
+.fullscreen-sidebar-content :deep(.hypervideo-chapters-tile) {
   color: #eee;
 }
 
-.fullscreen-sidebar-content .hypervideo-chapters-tile:hover,
-.fullscreen-sidebar-content .hypervideo-chapters-tile:focus-visible {
+.fullscreen-sidebar-content :deep(.hypervideo-chapters-tile:hover),
+.fullscreen-sidebar-content :deep(.hypervideo-chapters-tile:focus-visible) {
   box-shadow: 0 0 0 2px #64b5f6;
 }
 
-.fullscreen-sidebar-content .hypervideo-chapters-tile.is-active .hypervideo-chapters-thumb {
+.fullscreen-sidebar-content :deep(.hypervideo-chapters-tile.is-active .hypervideo-chapters-thumb) {
   box-shadow: 0 0 0 2px #64b5f6;
 }
 
-.fullscreen-sidebar-content .hypervideo-chapters-thumb {
+.fullscreen-sidebar-content :deep(.hypervideo-chapters-thumb) {
   background-color: #333;
 }
 
-.fullscreen-sidebar-content .hypervideo-chapters-duration {
+.fullscreen-sidebar-content :deep(.hypervideo-chapters-duration) {
   background-color: rgba(0, 0, 0, 0.8);
 }
 </style>

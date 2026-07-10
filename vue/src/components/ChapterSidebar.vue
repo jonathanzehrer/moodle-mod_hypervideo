@@ -84,6 +84,12 @@ export default {
   font-size: 1rem;
   font-weight: 600;
   margin-bottom: 0.5rem;
+  position: sticky;
+  top: 0;
+  background-color: var(--body-bg, #fff);
+  z-index: 1;
+  padding-top: 0.25rem;
+  padding-bottom: 0.25rem;
 }
 
 .hypervideo-chapters-list {

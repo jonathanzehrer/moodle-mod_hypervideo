@@ -33,6 +33,7 @@ ssh jonathan@moodle bash <<'REMOTE'
 
     echo "Pulling latest changes..."
     cd /var/www/moodle/mod/hypervideo
+    git checkout -- vue/package-lock.json
     git pull personal main
 
     echo "Installing npm dependencies..."

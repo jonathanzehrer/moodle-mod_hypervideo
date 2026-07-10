@@ -101,7 +101,7 @@
         <span v-else class="material-symbols" aria-hidden="true">pause</span>
       </button>
 
-      <span :title="$t('currentTime')" class="video-time">{{ formatTime(displayedCurrentTime) }}</span>
+      <span :title="$t('currentTime')" class="current-time">{{ formatTime(displayedCurrentTime) }}</span>
       <button
         v-if="showPrevNext"
         class="btn"
@@ -242,20 +242,8 @@ export default {
     VolumeControl,
   },
   emits: [
-    'play',
-    'pause',
-    'seeked',
-    'ended',
-    'playback',
-    'timeline-seek',
-    'button-seek',
     'timeupdate',
     'ready',
-    'survey-response',
-    'speed-change',
-    'fullscreen-change',
-    'volume-change',
-    'mute-change',
   ],
   data() {
     return {
@@ -473,13 +461,6 @@ export default {
           currenttime: this.video.currentTime,
           duration: this.video.duration,
         });
-        this.$emit('playback', {
-          context: "player",
-          action: "playback",
-          values: currentinterval,
-          currenttime: this.video.currentTime,
-          duration: this.video.duration,
-        });
         this.videoprogress += this.interval;
         this.lastposition = currentinterval;
       }
@@ -492,13 +473,6 @@ export default {
         context: 'player',
         action: 'play',
         values: '',
-        currenttime: this.video ? this.video.currentTime : 0,
-        duration: this.video ? this.video.duration : 0,
-      });
-      this.$emit('play', {
-        context: 'player',
-        action: 'play',
-        values: "",
         currenttime: this.video ? this.video.currentTime : 0,
         duration: this.video ? this.video.duration : 0,
       });
@@ -517,13 +491,6 @@ export default {
         context: 'player',
         action: 'pause',
         values: '',
-        currenttime: this.video.currentTime,
-        duration: this.video.duration,
-      });
-      this.$emit('pause', {
-        context: "player",
-        action: "pause",
-        values: "",
         currenttime: this.video.currentTime,
         duration: this.video.duration,
       });
@@ -551,13 +518,6 @@ export default {
           this.logger?.add('timeline-seek', {
             context: 'player',
             action: 'timeline-seek',
-            values: time,
-            currenttime: time,
-            duration: this.video.duration,
-          });
-          this.$emit('timeline-seek', {
-            context: "player",
-            action: "timeline-seek",
             values: time,
             currenttime: time,
             duration: this.video.duration,
@@ -595,18 +555,6 @@ export default {
         currenttime: this.video.currentTime,
         duration: this.video.duration,
       });
-      this.$emit('seeked', {
-        context: "player",
-        action: "seeked",
-        values: JSON.stringify({
-          from: from,
-          to: to,
-          distance: distance,
-          direction: direction,
-        }),
-        currenttime: this.video.currentTime,
-        duration: this.video.duration,
-      });
       this.seekStart = this.video.currentTime;
       this.isSeeking = false;
     },
@@ -620,13 +568,6 @@ export default {
         context: 'player',
         action: 'ended',
         values: '',
-        currenttime: this.video.currentTime,
-        duration: this.video.duration,
-      });
-      this.$emit('ended', {
-        context: "player",
-        action: "ended",
-        values: "",
         currenttime: this.video.currentTime,
         duration: this.video.duration,
       });
@@ -702,13 +643,6 @@ export default {
         currenttime: this.video ? this.video.currentTime : 0,
         duration: this.video ? this.video.duration : 0,
       });
-      this.$emit('fullscreen-change', {
-        context: 'player',
-        action: 'fullscreen-change',
-        values: this.isFullscreen ? 'enter' : 'exit',
-        currenttime: this.video ? this.video.currentTime : 0,
-        duration: this.video ? this.video.duration : 0,
-      });
     },
     maybeShowSurvey() {
       if (!this.enableSurvey) {
@@ -740,7 +674,6 @@ export default {
         currenttime: 0,
         duration: 0,
       });
-      this.$emit('survey-response', rating);
     },
     goToPrevious(source = 'controls') {
       this.emitButtonSeek(source, 'previous');
@@ -795,13 +728,6 @@ export default {
         currenttime: this.currentTime,
         duration: this.video.duration,
       });
-      this.$emit('button-seek', {
-        context: 'player',
-        action: 'button-seek',
-        values: source + '-' + direction,
-        currenttime: this.currentTime,
-        duration: this.video.duration,
-      });
     },
     playAfterNavigate() {
       // After the parent updates the range, hasEnded will be reset by the
@@ -814,15 +740,12 @@ export default {
     },
     onVolumeChange(e) {
       this.logger?.add('volume-change', e);
-      this.$emit('volume-change', e);
     },
     onMuteChange(e) {
       this.logger?.add('mute-change', e);
-      this.$emit('mute-change', e);
     },
     onSpeedChange(e) {
       this.logger?.add('speed-change', e);
-      this.$emit('speed-change', e);
     },
     onSurveyDismiss() {
       this.showSurvey = false;
@@ -871,7 +794,7 @@ export default {
   transition: opacity 0.3s ease;
 }
 
-.video-time {
+.current-time, .video-time {
   font-size: 0.85rem;
   font-family: monospace;
   color: #444;
@@ -973,18 +896,15 @@ export default {
   justify-content: center;
   width: 28px;
   flex-shrink: 0;
-  background: rgba(0, 0, 0, 0.45);
+  background: #fff6;
   cursor: pointer;
   transition: background 0.2s;
-  color: #fff;
   user-select: none;
 }
 
 .fullscreen-sidebar-trigger:hover,
 .fullscreen-sidebar-trigger:focus-visible {
-  background: rgba(0, 0, 0, 0.7);
-  outline: 2px solid #fff;
-  outline-offset: -2px;
+  background: #fffc;
 }
 
 .fullscreen-sidebar-trigger .material-symbols {
@@ -995,56 +915,7 @@ export default {
   width: 320px;
   max-height: 100%;
   overflow-y: auto;
-  background: rgba(0, 0, 0, 0.85);
-  backdrop-filter: blur(8px);
-  color: #eee;
-  padding: 1rem;
-  padding-bottom: 1rem;
-  box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
-}
-
-/* Darken chapter components inside the fullscreen sidebar */
-.fullscreen-sidebar-content :deep(.hypervideo-chapters-heading) {
-  color: #fff;
-  background-color: rgba(0, 0, 0, 0.85);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
-  padding-bottom: 0.5rem;
-  margin-bottom: 0.75rem;
-}
-
-.fullscreen-sidebar-content :deep(.hypervideo-chapters-time) {
-  color: #aaa;
-}
-
-.fullscreen-sidebar-content :deep(.hypervideo-chapters-item.is-active) {
-  border-left-color: #64b5f6;
-  background-color: rgba(100, 181, 246, 0.12);
-}
-
-.fullscreen-sidebar-content :deep(.hypervideo-chapters-button:hover),
-.fullscreen-sidebar-content :deep(.hypervideo-chapters-button:focus-visible) {
-  background-color: rgba(255, 255, 255, 0.1);
-  outline-color: #64b5f6;
-}
-
-.fullscreen-sidebar-content :deep(.hypervideo-chapters-tile) {
-  color: #eee;
-}
-
-.fullscreen-sidebar-content :deep(.hypervideo-chapters-tile:hover),
-.fullscreen-sidebar-content :deep(.hypervideo-chapters-tile:focus-visible) {
-  box-shadow: 0 0 0 2px #64b5f6;
-}
-
-.fullscreen-sidebar-content :deep(.hypervideo-chapters-tile.is-active .hypervideo-chapters-thumb) {
-  box-shadow: 0 0 0 2px #64b5f6;
-}
-
-.fullscreen-sidebar-content :deep(.hypervideo-chapters-thumb) {
-  background-color: #333;
-}
-
-.fullscreen-sidebar-content :deep(.hypervideo-chapters-duration) {
-  background-color: rgba(0, 0, 0, 0.8);
+  padding: 10px;
+  /* box-shadow: 0 0 20px rgba(0, 0, 0, 0.3); */
 }
 </style>

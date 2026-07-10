@@ -3,6 +3,8 @@ import { test, expect } from '@playwright/test';
 test('load player button renders the video player (Variant 3)', async ({ page }) => {
   await page.goto('/');
 
+  await page.fill('#vid-url', '/test-video.mp4');
+
   // Select Variant 3 from the Override Variant dropdown.
   await page.selectOption('#vid-variant', '3');
 

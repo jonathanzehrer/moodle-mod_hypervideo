@@ -679,7 +679,7 @@ export default {
       this.emitButtonSeek(source, 'previous');
       if (this.onPrevious) {
         this.onPrevious();
-        this.playAfterNavigate();
+        // this.playAfterNavigate();
         return;
       }
       // Fallback: navigate to previous chapter internally
@@ -703,7 +703,7 @@ export default {
       this.emitButtonSeek(source, 'next');
       if (this.onNext) {
         this.onNext();
-        this.playAfterNavigate();
+        // this.playAfterNavigate();
         return;
       }
       // Fallback: navigate to next chapter internally

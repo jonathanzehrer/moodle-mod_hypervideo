@@ -1,8 +1,5 @@
 import { test, expect } from '@playwright/test';
 
-// ---------------------------------------------------------------------------
-// Helper / utility methods (wireframe – to be implemented)
-// ---------------------------------------------------------------------------
 
 async function setupVideo(page) {
   await page.goto('/');
@@ -13,21 +10,7 @@ async function setupVideo(page) {
 
   await page.fill('#vid-url', '/test-video.mp4');
 
-  /*
-  TODO: Set chapters to
-```
-0:00 Intro
-0:30 Protagonist kommt
-1:23 Antagonisten kommen
-2:38 Angriff der Antagonisten
-3:58 Die Wendung
-05:00 Erster Gegner
-05:39 Nächster Gegner
-06:19 Finaler Gegner
-07:40 Happy End
-08:10 Abspann
-```
-  */
+  await page.fill('#vid-chapters', '0:00 Chapter 1\n0:10 Chapter 2\n0:20 Chapter 3');
 
   await page.selectOption('#vid-variant', '1');
 
@@ -51,58 +34,15 @@ async function setupVideo(page) {
   await page.waitForSelector('.video-controls', { timeout: 10000 });
 }
 
-/**
- * Set up collection of mock AJAX log events that pass through console.log.
- * Returns an array `logEntries` that will be populated with log data objects
- * whenever a message matching 'mod_hypervideo_log' is dispatched.
- *
- * TODO: Extract common setup into this helper and unify with existing
- * inline listeners in the tests below.
- */
-function setupLogCollection(/* page */) {
-  // TODO: attach page.on('console', ...) listener, parse log entries,
-  //       push matching entries into the returned array.
-}
+test('visually inspect the video player (Variant 1)', async ({ page }) => {
 
-/**
- * Verify that a log entry with the specified `action` exists in `entries`.
- * Optionally also check that it happens at the expected position relative to
- * other events.
- *
- * TODO: Implement the assertion body.
- */
-function verifyLoggedEvent(entries, action /*, options */) {
-  // TODO: `expect(entries.map(e => e.action)).toContain(action);`
-  //       plus ordering checks if needed.
-}
-
-/**
- * Wait until the Hypervideo player and its controls are visible.
- */
-function waitForPlayerReady(page) {
-  // TODO: extract repeated waitForSelector calls into this helper.
-}
-
-/**
- * Set the video ~2 seconds before the end of the last chapter.
- * This is used to speed up tests that need the video to finish soon.
- */
-function seekNearEnd(/* page */) {
-  // TODO: compute end time from chapters, set video.currentTime
-  //       or dispatch a seeked event.
-}
-
-/* test('load player button renders the video player (Variant 1)', async ({ page }) => {
-  
   await setupVideo(page);
 
-  await page.waitForTimeout(4000); // Wait for thumbnail to render
-
   // Take a screenshot and compare against the stored reference.
-  await expect(page.locator("#app")).toHaveScreenshot('player-loaded-variant1.png', {
+  await expect(page.locator("#app")).toHaveScreenshot('player.png', {
     fullPage: true,
   });
-}); */
+});
 
 test('play/pause/time-update cycle works correctly', async ({ page }) => {
 

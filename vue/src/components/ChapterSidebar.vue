@@ -79,8 +79,9 @@ export default {
 .hypervideo-chapters {
   border-radius: var(--border-radius);
   background-color: var(--light-bg);
-  overflow: hidden;
   height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .hypervideo-chapters-heading {

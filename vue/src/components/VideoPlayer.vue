@@ -763,6 +763,7 @@ export default {
   /* Round corners */
   border-radius: var(--border-radius);
   overflow: hidden;
+  background-color: #000;
 }
 
 .hypervideo-error {
@@ -792,6 +793,7 @@ export default {
   backdrop-filter: blur(4px);
   z-index: 6;
   transition: opacity 0.3s ease;
+  border-radius: 0 0 var(--border-radius) var(--border-radius);
 }
 
 .current-time, .video-time {

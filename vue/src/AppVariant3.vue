@@ -6,7 +6,7 @@
   >
     <h3 v-if="title" class="hypervideo-title" :id="headingId">{{ title }}</h3>
     <div class="variant">
-      <div class="player-container">
+      <div class="player-wrapper">
         <VideoPlayer
           ref="videoPlayer"
           :url="url"
@@ -220,13 +220,31 @@ export default {
 <style scoped>
 
 .variant {
-  display: flex;
-  gap: 1rem;
+  position: relative;
+  box-sizing: border-box;
+}
+
+.player-wrapper {
+  /* Clamp width so aspect-ratio height never exceeds the variant's max-height */
+  --max-h: calc(100vh - 300px);
+  width: min(calc(100% - 230px - 1rem), calc(var(--max-h) * 16 / 9));
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  border-radius: var(--border-radius);
+}
+
+.player-wrapper :deep(.player-container) {
+  width: 100%;
+  height: 100%;
 }
 
 .chapters-sidebar {
-  width: 220px;
-  position: relative;
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 230px;
+  overflow: hidden;
 }
 
 .hypervideo-title {

@@ -78,4 +78,16 @@ export default {
   margin-bottom: 1rem;
 }
 
+.variant {
+  width: 100%;
+  max-height: calc(100vh - 300px);
+  position: relative;
+  box-sizing: border-box;
+}
+
+:deep(.player-container) {
+  /* width: 100%; */
+  height: 100%;
+}
+
 </style>

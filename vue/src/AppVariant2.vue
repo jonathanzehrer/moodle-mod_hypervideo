@@ -14,7 +14,7 @@
           @seek="seekTo"
         />
       </div>
-      <div class="player-container">
+      <div class="player-wrapper">
         <VideoPlayer
           ref="videoPlayer"
           :url="url"
@@ -143,12 +143,39 @@ export default {
 
 
 .variant {
-  display: flex;
-  gap: 1rem;
+  width: 100%;
+  max-height: calc(100vh - 300px);
+  position: relative;
+  padding-right: calc(230px + 1rem);
+  box-sizing: border-box;
+}
+
+.player-wrapper {
+  /* Clamp width so aspect-ratio height never exceeds the variant's max-height */
+  --max-h: calc(100vh - 300px);
+  margin-left: calc(230px + 1rem);
+  width: min(100%, calc(var(--max-h) * 16 / 9));
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  border-radius: var(--border-radius);
+}
+
+.player-wrapper :deep(.player-container) {
+  width: 100%;
+  height: 100%;
+}
+
+.player-wrapper :deep(video) {
+  object-fit: contain;
 }
 
 .chapters-sidebar {
-  flex: 0 0 300px;
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 230px;
+  overflow: hidden;
 }
 
 .hypervideo-title {

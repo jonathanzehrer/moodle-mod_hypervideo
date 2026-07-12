@@ -249,7 +249,8 @@ export default {
 .hypervideo-chapters {
   border-radius: var(--border-radius);
   background-color: var(--light-bg);
-  overflow: hidden;
+  overflow-y: auto;
+  overflow-x: hidden;
   height: 100%;
 }
 
@@ -301,7 +302,7 @@ export default {
   position: relative;
   border-radius: 4px;
   overflow: hidden;
-  aspect-ratio: 16 / 9;
+  /* aspect-ratio: 16 / 9; */
   background-color: #e0e0e0;
 }
 

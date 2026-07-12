@@ -95,6 +95,7 @@
         class="btn btn-playpause"
         @click="handlePlayClick"
         :title="hasEnded ? $t('rewatch') : (isPaused ? $t('play') : $t('pause'))"
+        :aria-label="hasEnded ? $t('rewatch') : (isPaused ? $t('play') : $t('pause'))"
       >
         <span v-if="hasEnded" class="material-symbols" aria-hidden="true">replay</span>
         <span v-else-if="isPaused" class="material-symbols" aria-hidden="true">play_arrow</span>

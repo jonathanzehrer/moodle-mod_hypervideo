@@ -146,13 +146,7 @@ export default {
       this.onChapterSeek(this.chapters[0].time);
     },
     onChapterSeek(time) {
-      const idx = this.chapters.findIndex(ch => ch.time === time);
-      if (idx === -1) return;
-      const start = time;
-      const nextChapter = this.chapters[idx + 1];
-      const end = nextChapter ? nextChapter.time : null;
-      this.rangeSet = true;
-      this.range = { start, end };
+      this.applyChapterRange(time);
       if (this.logger) {
         this.logger.add("chapter-seek", {
           context: "player3",
@@ -162,6 +156,15 @@ export default {
           duration: this.duration,
         });
       }
+    },
+    applyChapterRange(time) {
+      const idx = this.chapters.findIndex(ch => ch.time === time);
+      if (idx === -1) return;
+      const start = time;
+      const nextChapter = this.chapters[idx + 1];
+      const end = nextChapter ? nextChapter.time : null;
+      this.rangeSet = true;
+      this.range = { start, end };
     },
     onPlayerTimeUpdate({ currentTime, duration }) {
       this.currentTime = currentTime;
@@ -200,7 +203,7 @@ export default {
         }
       }
       if (prevChapter) {
-        this.onChapterSeek(prevChapter.time);
+        this.applyChapterRange(prevChapter.time);
       }
     },
     goToNextChapter() {
@@ -208,7 +211,7 @@ export default {
       const currentStart = this.range ? this.range.start : 0;
       for (let i = 0; i < sorted.length; i++) {
         if (sorted[i].time > currentStart + 0.5) {
-          this.onChapterSeek(sorted[i].time);
+          this.applyChapterRange(sorted[i].time);
           return;
         }
       }

@@ -266,14 +266,15 @@ export default {
 }
 
 .hypervideo-chapters-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  display: flex;
+  flex-direction: column;
   gap: 10px;
   padding: 5px;
 }
 
 .hypervideo-chapters-tile {
   display: flex;
+  width: 200px;
   flex-direction: column;
   padding: 5px;
   gap: 0.35rem;

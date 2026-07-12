@@ -914,7 +914,7 @@ export default {
 }
 
 .fullscreen-sidebar-content {
-  width: 320px;
+  /* width: 320px; */
   max-height: 100%;
   overflow-y: auto;
   padding: 10px;

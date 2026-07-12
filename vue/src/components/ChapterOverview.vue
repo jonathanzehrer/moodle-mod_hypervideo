@@ -269,14 +269,14 @@ export default {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
   gap: 10px;
-  padding: 10px;
+  padding: 5px;
 }
 
 .hypervideo-chapters-tile {
   display: flex;
   flex-direction: column;
+  padding: 5px;
   gap: 0.35rem;
-  padding: 0;
   border: none;
   background: none;
   cursor: pointer;
@@ -289,13 +289,15 @@ export default {
 }
 
 .hypervideo-chapters-tile:hover,
-.hypervideo-chapters-tile:focus-visible {
-  box-shadow: 0 0 0 2px #0f6cbf;
+.hypervideo-chapters-tile:focus-visible
+.hypervideo-chapters-tile.is-active:hover
+.hypervideo-chapters-tile.is-active:focus-visible {
+  box-shadow: 0 0 0 2px var(--accent-color);
   outline: none;
 }
 
-.hypervideo-chapters-tile.is-active .hypervideo-chapters-thumb {
-  box-shadow: 0 0 0 2px #0f6cbf;
+.hypervideo-chapters-tile.is-active {
+  box-shadow: 0 0 0 2px rgba(var(--accent-color-rgb), 0.5);
 }
 
 .hypervideo-chapters-thumb {

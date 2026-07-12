@@ -134,8 +134,8 @@ export default {
 
 .hypervideo-chapters-button:hover,
 .hypervideo-chapters-button:focus-visible {
-  background-color: rgba(0, 0, 0, 0.05);
-  box-shadow: 0 0 0 2px var(--accent-color);
+  background-color: rgba(var(--accent-color-rgb), 0.05);
+  box-shadow: 0 0 0 2px rgba(var(--accent-color-rgb), 0.5);
 }
 
 .hypervideo-chapters-time {

@@ -241,9 +241,9 @@ export default {
 .chapters-sidebar {
   position: absolute;
   top: 0;
-  right: 0;
+  --max-h: calc(100vh - 300px);
+  left: min(calc(100% - 230px), calc(var(--max-h) * 16 / 9 + 1rem));
   bottom: 0;
-  width: 230px;
   overflow: hidden;
 }
 

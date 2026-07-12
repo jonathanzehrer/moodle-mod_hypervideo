@@ -676,13 +676,13 @@ export default {
       });
     },
     goToPrevious(source = 'controls') {
-      this.emitButtonSeek(source, 'previous');
       if (this.onPrevious) {
         this.onPrevious();
         // this.playAfterNavigate();
         return;
       }
       // Fallback: navigate to previous chapter internally
+      this.emitButtonSeek(source, 'previous');
       if (!this.chapters || !this.chapters.length || !this.video) return;
       const sorted = this.sortedChapters;
       const currentTime = this.currentTime;
@@ -700,13 +700,13 @@ export default {
       }
     },
     goToNext(source = 'controls') {
-      this.emitButtonSeek(source, 'next');
       if (this.onNext) {
         this.onNext();
         // this.playAfterNavigate();
         return;
       }
       // Fallback: navigate to next chapter internally
+      this.emitButtonSeek(source, 'next');
       if (!this.chapters || !this.chapters.length || !this.video) return;
       const sorted = this.sortedChapters;
       const currentTime = this.currentTime;

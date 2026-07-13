@@ -70,7 +70,8 @@ export const init = async (
     'AppVariant2.vue': () => import('./AppVariant2.vue'),
     'AppVariant3.vue': () => import('./AppVariant3.vue'),
   };
-  const App = (await variantLoaders[variantFile]()).default;
+  const loadVariant = variantLoaders[variantFile] || variantLoaders['AppVariant1.vue'];
+  const App = (await loadVariant()).default;
 
   const store = createStore({
     pluginName: fullPluginName,

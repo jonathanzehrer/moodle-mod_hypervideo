@@ -170,6 +170,8 @@ This software uses the following open source packages:
 [vue-router](https://router.vuejs.org/),
 [node.js](https://nodejs.org/).
 
+Icons: [Material Symbols](https://fonts.google.com/icons) by Google, used under the [Apache 2.0 License](http://www.apache.org/licenses/LICENSE-2.0).
+
 ## Related
 
 tba

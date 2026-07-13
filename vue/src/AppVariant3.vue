@@ -19,7 +19,6 @@
           :enable-survey="enableSurvey"
           :on-previous="goToPreviousChapter"
           :on-next="goToNextChapter"
-          :on-overview="null"
           :logger="logger"
           fullscreen-sidebar-position="right"
           @timeupdate="onPlayerTimeUpdate"

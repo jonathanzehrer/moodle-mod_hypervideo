@@ -5,7 +5,7 @@
     :aria-label="title || $t('aria_videoplayer')"
   >
     <h3 v-if="title" class="hypervideo-title" :id="headingId">{{ title }}</h3>
-    <div class="variant">
+    <div class="variant" :class="{ 'no-chapters': !chapters.length }">
       <div v-if="chapters.length" class="chapters-sidebar">
         <ChapterSidebar
           :chapters="chapters"
@@ -167,6 +167,14 @@ export default {
 
 .player-wrapper :deep(video) {
   object-fit: contain;
+}
+
+.variant.no-chapters {
+  padding-right: 0;
+}
+
+.variant.no-chapters .player-wrapper {
+  margin-left: 0;
 }
 
 .chapters-sidebar {

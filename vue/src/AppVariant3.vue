@@ -24,7 +24,7 @@
           @timeupdate="onPlayerTimeUpdate"
           @ready="onPlayerReady"
         >
-          <template #fullscreen-sidebar>
+          <template v-if="chapters.length" #fullscreen-sidebar>
             <ChapterOverview
               :chapters="chapters"
               :current-time="currentTime"

@@ -87,7 +87,7 @@ class log_services extends base_external {
             'other' => [
                 'courseid' => (int) $data['courseid'],
                 'url' => (string) $d->location->url,
-                'videocontext' => (string) $d->value->context,
+                'videocontext' => (string) ($d->context ?? $d->value->context ?? ''),
                 'position' => (string) round($d->value->currenttime, 3),
                 'actions' => (string) $d->value->action,
                 'val' => strval($d->value->values),

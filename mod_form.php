@@ -69,6 +69,17 @@ class mod_hypervideo_mod_form extends moodleform_mod {
         $mform->setType('chapters', PARAM_TEXT);
         $mform->addHelpButton('chapters', 'chapters', 'hypervideo');
 
+        // Player style dropdown.
+        $playerstyles = [
+            'AppVariant1.vue' => get_string('playerstyle_plain', 'hypervideo'),
+            'AppVariant2.vue' => get_string('playerstyle_chapters', 'hypervideo'),
+            'AppVariant3.vue' => get_string('playerstyle_playlist', 'hypervideo'),
+            'random' => get_string('playerstyle_random', 'hypervideo'),
+        ];
+        $mform->addElement('select', 'playerstyle', get_string('playerstyle', 'hypervideo'), $playerstyles);
+        $mform->setDefault('playerstyle', 'AppVariant1.vue');
+        $mform->setType('playerstyle', PARAM_TEXT);
+
         // Add standard elements, common to all modules.
         $this->standard_coursemodule_elements();
 

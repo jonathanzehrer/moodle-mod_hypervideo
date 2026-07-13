@@ -140,6 +140,23 @@ You can [download](https://github.com/catalparesearch/mod_hypervideo/releases/ta
 
 Client-side code is located in the folder vue/. The file view.php contains the root DOM element of the video player. The webservice for accessing Moodle database can be found at db/external.php.
 
+You can start a demo of the player outside of Moodle by running
+```bash
+cd vue
+npm run dev:hdr
+```
+
+You can run regression tests by running
+```bash
+cd vue
+npx playwright install
+npx playwright test
+```
+If the player visually changed and the screenshots no longer match you can re-initialize them with
+```
+npx playwright test --update-snapshots
+```
+
 ## Emailware
 
 _Hypervideo_ is an [emailware](https://en.wiktionary.org/wiki/emailware). Meaning, if you liked using this plugin or it has helped you in any way, I'd like you send me an email at <niels.seidel@fernuni-hagen.de> about anything you'd want to say about this software. I'd really appreciate it!
@@ -152,6 +169,8 @@ This software uses the following open source packages:
 [vuex](https://vuex.vuejs.org/),
 [vue-router](https://router.vuejs.org/),
 [node.js](https://nodejs.org/).
+
+Icons: [Material Symbols](https://fonts.google.com/icons) by Google, used under the [Apache 2.0 License](http://www.apache.org/licenses/LICENSE-2.0).
 
 ## Related
 

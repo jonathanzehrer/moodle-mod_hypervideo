@@ -22,11 +22,26 @@
 // eslint-disable-next-line camelcase, no-undef
 __webpack_public_path__ = M.cfg.wwwroot + "/mod/hypervideo/amd/build/";
 
-import App from "./App.vue";
 import { createApp } from "vue";
 import { createStore } from "./store";
 import { i18n } from "./util/i18n";
 import Communication from "./scripts/communication";
+
+// Use dynamic imports for CSS to ensure __webpack_public_path__ is set
+// before webpack resolves font/asset URLs (css-loader evaluates
+// dependencies synchronously in the module factory, before the
+// public-path assignment in the entry body runs).
+const cssReady = Promise.all([
+  import("@fontsource-variable/material-symbols-rounded/standard.css"),
+  import("./styles/player.css"),
+]);
+
+/**
+ * Compute the variant number (1-3) from hypervideo id and user id.
+ */
+function computeVariant(hypervideoid, userid) {
+  return ((Number(hypervideoid) || 0) + (Number(userid) || 0)) % 3;
+}
 
 export const init = async (
   coursemoduleid,
@@ -37,8 +52,26 @@ export const init = async (
   url,
   title,
   initialData = null,
+  userid = 0,
+  playerstyle = 'random',
 ) => {
   Communication.setPluginName(fullPluginName);
+
+  // If "random" is selected, compute variant deterministically from IDs.
+  let variantFile = playerstyle;
+  if (variantFile === 'random') {
+    const variant = computeVariant(hypervideoid, userid);
+    variantFile = `AppVariant${variant + 1}.vue`;
+  }
+
+  // Use an explicit lookup so Vite can statically analyze each import.
+  const variantLoaders = {
+    'AppVariant1.vue': () => import('./AppVariant1.vue'),
+    'AppVariant2.vue': () => import('./AppVariant2.vue'),
+    'AppVariant3.vue': () => import('./AppVariant3.vue'),
+  };
+  const loadVariant = variantLoaders[variantFile] || variantLoaders['AppVariant1.vue'];
+  const App = (await loadVariant()).default;
 
   const store = createStore({
     pluginName: fullPluginName,
@@ -46,6 +79,7 @@ export const init = async (
     contextID: Number(contextid),
     courseid: Number(courseid),
     hypervideoid: Number(hypervideoid),
+    userid: Number(userid),
     url: url,
     title: title,
     chapters: initialData && initialData.chapters ? initialData.chapters : [],
@@ -65,6 +99,9 @@ export const init = async (
 
   i18n.global.setLocaleMessage(lang, store.state.strings);
   i18n.global.locale = lang;
+
+  // Ensure CSS (including Material Symbols font) is injected before mounting.
+  await cssReady;
 
   const app = createApp(App);
   app.use(store);

@@ -33,6 +33,7 @@ export function createStore(initialState) {
         courseid: initialState.courseid || -1,
         url: initialState.url || "",
         hypervideoid: initialState.hypervideoid || -1,
+        userid: initialState.userid || 0,
         title: initialState.title || "",
         chapters: initialState.chapters || [],
         strings: {},
@@ -53,6 +54,9 @@ export function createStore(initialState) {
       },
       setHypervideoid(state, val) {
         state.hypervideoid = val;
+      },
+      setUserid(state, val) {
+        state.userid = val;
       },
       setTitle(state, title) {
         state.title = title;
@@ -91,6 +95,7 @@ export function createStore(initialState) {
       getCourseid: (state) => state.courseid,
       getURL: (state) => state.url,
       getHypervideoid: (state) => state.hypervideoid,
+      getUserid: (state) => state.userid,
       getTitle: (state) => state.title,
       getModeratorStatus: (state) => state.isModerator,
       getAlertType: (state) => `alert-${state.alert.type}`,

@@ -1,0 +1,924 @@
+<template>
+  <div
+    class="player-container"
+    @mouseenter="onMouseEnter"
+    @mouseleave="onMouseLeave"
+  >
+
+    <!-- Fullscreen title overlay -->
+    <div
+      v-if="title && isFullscreen"
+      class="fullscreen-title-overlay"
+      :class="{
+        'controls-hidden': !controlsVisible,
+        'title-shifted-left': fullscreenSidebarPosition === 'left',
+      }"
+      :aria-label="fullscreenTitleText"
+    >
+      {{ fullscreenTitleText }}
+    </div>
+
+    <!-- Fullscreen sidebar overlay (only when slot is provided) -->
+    <div
+      v-if="isFullscreen && $slots['fullscreen-sidebar']"
+      class="fullscreen-sidebar-wrapper"
+      :class="[
+        `fs-sidebar-${fullscreenSidebarPosition}`,
+        { 'controls-hidden': !controlsVisible },
+      ]"
+      @mouseleave="showSidebar = false"
+    >
+      <div
+        class="fullscreen-sidebar-trigger"
+        @mouseenter="showSidebar = true"
+        :aria-label="showSidebar ? $t('hide_sidebar') : $t('show_sidebar')"
+      >
+        <span class="material-symbols" aria-hidden="true">
+          {{ fullscreenSidebarPosition === 'right' ? 'chevron_left' : 'chevron_right' }}
+        </span>
+      </div>
+      <div
+        v-show="showSidebar"
+        class="fullscreen-sidebar-content"
+        @mouseenter="showSidebar = true"
+      >
+        <slot name="fullscreen-sidebar" />
+      </div>
+    </div>
+
+    <!-- Player error -->
+    <div
+      v-if="videoError"
+      class="hypervideo-error alert alert-danger"
+      role="alert"
+      aria-live="assertive"
+    >
+      {{ $t("player_error") }}
+    </div>
+
+    <!-- Player loading -->
+    <div
+      v-if="!videoError && !videoReady"
+      class="hypervideo-loading"
+      aria-live="polite"
+    >
+      <span role="status">{{ $t("player_loading") }}</span>
+    </div>
+
+    <video
+      v-show="!videoError"
+      ref="videoEl"
+      :src="url"
+      preload="metadata"
+      :aria-label="title || $t('aria_videoplayer')"
+      :aria-describedby="headingId"
+      @click="handlePlayClick"
+      @play="onPlay"
+      @pause="onPause"
+      @loadeddata="onCanPlay"
+      @timeupdate="onTimeUpdate"
+      @seeked="onSeeked"
+      @seeking="onSeeking"
+      @ended="onEnded"
+      @error="onError"
+    >
+      <p>{{ $t("aria_videonotsupported") }}</p>
+    </video>
+
+    <div
+      class="video-controls"
+      :class="{ 'controls-hidden': !controlsVisible }"
+      v-if="videoReady && !videoError"
+    >
+      <!-- Play/Pause/Repeat button -->
+      <button
+        class="btn btn-playpause"
+        @click="handlePlayClick"
+        :title="hasEnded ? $t('rewatch') : (isPaused ? $t('play') : $t('pause'))"
+        :aria-label="hasEnded ? $t('rewatch') : (isPaused ? $t('play') : $t('pause'))"
+      >
+        <span v-if="hasEnded" class="material-symbols" aria-hidden="true">replay</span>
+        <span v-else-if="isPaused" class="material-symbols" aria-hidden="true">play_arrow</span>
+        <span v-else class="material-symbols" aria-hidden="true">pause</span>
+      </button>
+
+      <span :title="$t('currentTime')" class="current-time">{{ formatTime(displayedCurrentTime) }}</span>
+      <button
+        v-if="showPrevNext"
+        class="btn"
+        :disabled="!hasPrevious"
+        :title="$t('previous_' + prevNextTitle)"
+        @click="goToPrevious('controls')"
+      >
+        <span class="material-symbols" aria-hidden="true">skip_previous</span>
+      </button>
+      <Seekbar
+        v-model="currentTime"
+        :min="effectiveMin"
+        :max="effectiveMax"
+        :show-chapter-marks="showChapterMarks"
+        :display-chapters="displayChapters"
+        @seek="seekTo"
+      />
+      <span :title="$t('duration')" class="video-time">{{ formatTime(displayedDuration) }}</span>
+      <button
+        v-if="showPrevNext"
+        class="btn"
+        :disabled="!hasNext"
+        :title="$t('next_' + prevNextTitle)"
+        @click="goToNext('controls')"
+      >
+        <span class="material-symbols" aria-hidden="true">skip_next</span>
+      </button>
+
+      <VolumeControl
+        :video="video"
+        :initial-volume="volume"
+        :initial-muted="isMuted"
+        @volume-change="onVolumeChange"
+        @mute-change="onMuteChange"
+      />
+
+      <PlaybackSpeedControl
+        :video="video"
+        @speed-change="onSpeedChange"
+      />
+
+      <button
+        class="btn"
+        @click="toggleFullscreen"
+        :title="isFullscreen ? $t('exit_fullscreen') : $t('fullscreen')"
+      >
+        <span v-if="!isFullscreen" class="material-symbols" aria-hidden="true">fullscreen</span>
+        <span v-else class="material-symbols" aria-hidden="true">fullscreen_exit</span>
+      </button>
+    </div>
+
+    <!-- Ended overlay -->
+    <EndedOverlay
+      v-if="hasEnded && videoReady"
+      :show-prev-next="showOverlayPrevNext"
+      :prev-next-title="prevNextTitle"
+      :has-previous="hasPrevious"
+      :has-next="hasNext"
+      @replay="handlePlayClick"
+      @previous="goToPrevious('ended-overlay')"
+      @next="goToNext('ended-overlay')"
+    />
+
+    <Survey
+      :show="showSurvey"
+      :question="$t('survey_question')"
+      :submit-label="$t('survey_submit')"
+      @submit="onSurveySubmit"
+      @close="onSurveyDismiss"
+    />
+  </div>
+</template>
+
+<script>
+import EndedOverlay from "./EndedOverlay.vue";
+import Survey from "./Survey.vue";
+import PlaybackSpeedControl from "./PlaybackSpeedControl.vue";
+import Seekbar from "./Seekbar.vue";
+import VolumeControl from "./VolumeControl.vue";
+
+export default {
+  props: {
+    url: {
+      type: String,
+      required: true,
+    },
+    title: {
+      type: String,
+      default: '',
+    },
+    headingId: {
+      type: String,
+      default: '',
+    },
+    chapters: {
+      type: Array,
+      default: () => [],
+    },
+    range: {
+      type: Object,
+      default: null,
+    },
+    enableSurvey: {
+      type: Boolean,
+      default: true,
+    },
+    onPrevious: {
+      type: Function,
+      default: null,
+    },
+    onNext: {
+      type: Function,
+      default: null,
+    },
+    showChapterMarks: {
+      type: Boolean,
+      default: true,
+    },
+    currentChapterTitle: {
+      type: String,
+      default: '',
+    },
+    fullscreenSidebarPosition: {
+      type: String,
+      default: 'right',
+      validator: (v) => ['left', 'right'].includes(v),
+    },
+    logger: {
+      type: Object,
+      default: null,
+    },
+  },
+  components: {
+    EndedOverlay,
+    Survey,
+    PlaybackSpeedControl,
+    Seekbar,
+    VolumeControl,
+  },
+  emits: [
+    'timeupdate',
+    'ready',
+  ],
+  data() {
+    return {
+      video: null, // Reference to the <video> element
+      seekStart: 0,
+      videoid: 0,
+      videoprogress: 0,
+      duration: 0,
+      interval: 2,
+      lastposition: -1,
+      timer: null,
+      videoError: false,
+      videoReady: false,
+      currentTime: 0,
+      isSeeking: false,
+      isPaused: true, // Whether the video is currently paused (true) or playing (false)
+      isFullscreen: false,
+      hasEnded: false,
+      volume: 1, // Track initial volume for VolumeControl (read from video in onCanPlay)
+      isMuted: false, // Track initial muted state for VolumeControl (read from video in onCanPlay)
+      showSurvey: false,
+      isHovering: false,
+      isFocused: false,
+      controlsVisible: true,
+      showSidebar: false,
+    };
+  },
+  mounted() {
+    document.addEventListener("fullscreenchange", this.onFullscreenChange);
+    document.addEventListener("keydown", this.onKeydown);
+    this.$el.addEventListener("focusin", this.onFocusIn);
+    this.$el.addEventListener("focusout", this.onFocusOut);
+    this.videoid = "videoid" + Math.floor(Math.random() * 1000);
+  },
+  beforeUnmount() {
+    document.removeEventListener("fullscreenchange", this.onFullscreenChange);
+    document.removeEventListener("keydown", this.onKeydown);
+    this.$el.removeEventListener("focusin", this.onFocusIn);
+    this.$el.removeEventListener("focusout", this.onFocusOut);
+    if (this.timer) {
+      clearInterval(this.timer);
+      this.timer = null;
+    }
+  },
+  computed: {
+    effectiveMin() {
+      return this.range ? this.range.start : 0;
+    },
+    effectiveMax() {
+      if (!this.video || !this.video.duration) return 0;
+      if (this.range && this.range.end != null) {
+        return Math.min(this.range.end, this.video.duration);
+      }
+      return this.video.duration;
+    },
+    displayedCurrentTime() {
+      if (this.range) {
+        return Math.max(0, this.currentTime - this.effectiveMin);
+      }
+      return this.currentTime;
+    },
+    displayedDuration() {
+      if (this.range) {
+        return this.effectiveMax - this.effectiveMin;
+      }
+      return this.effectiveMax;
+    },
+    fullscreenTitleText() {
+      if (this.currentChapterTitle) {
+        return `${this.title} - ${this.currentChapterTitle}`;
+      }
+      return this.title;
+    },
+    displayChapters() {
+      if (!this.chapters || !this.chapters.length || !this.video) return [];
+      const duration = this.video.duration;
+      if (!duration || duration <= 0) return [];
+
+      const sorted = [...this.chapters].sort((a, b) => a.time - b.time);
+
+      return sorted.map((ch, i) => {
+        const start = Math.max(0, ch.time);
+        const end = i < sorted.length - 1 ? sorted[i + 1].time : duration;
+        const startPercent = (start / duration) * 100;
+        const widthPercent = ((end - start) / duration) * 100;
+        return { ...ch, start, end, startPercent, widthPercent };
+      });
+    },
+    sortedChapters() {
+      if (!this.chapters || !this.chapters.length) return [];
+      return [...this.chapters].sort((a, b) => a.time - b.time);
+    },
+    showPrevNext() {
+      return (this.chapters && this.chapters.length > 0) || (this.onPrevious && this.onNext);
+    },
+    showOverlayPrevNext() {
+      return !!(this.onPrevious && this.onNext);
+    },
+    prevNextTitle() {
+      if (this.chapters && this.chapters.length > 0) {
+        return 'chapter';
+      }
+      return 'video';
+    },
+    hasPrevious() {
+      if (this.chapters && this.chapters.length > 0) {
+        const sorted = this.sortedChapters;
+        const ref = this.range ? this.range.start : this.currentTime;
+        return sorted.some(ch => ch.time < ref - 0.5);
+      }
+      // No chapters: disable if at or near the start of the video.
+      return this.currentTime > 0.5;
+    },
+    hasNext() {
+      if (this.chapters && this.chapters.length > 0) {
+        const sorted = this.sortedChapters;
+        const ref = this.range ? this.range.start : this.currentTime;
+        return sorted.some(ch => ch.time > ref + 0.5);
+      }
+      // No chapters: disable if at or near the end of the video.
+      return this.video && this.currentTime < this.video.duration - 0.5;
+    },
+  },
+  watch: {
+    range: {
+      handler(newRange) {
+        if (newRange && this.video && this.videoReady) {
+          this.video.currentTime = newRange.start;
+          this.currentTime = newRange.start;
+          this.hasEnded = false;
+        }
+      },
+      deep: true,
+    },
+  },
+  methods: {
+    updateControlsVisibility() {
+      this.controlsVisible = this.isHovering || this.isFocused;
+    },
+    onMouseEnter() {
+      this.isHovering = true;
+      this.updateControlsVisibility();
+    },
+    onMouseLeave() {
+      this.isHovering = false;
+      this.updateControlsVisibility();
+    },
+    onFocusIn() {
+      this.isFocused = true;
+      this.updateControlsVisibility();
+    },
+    onFocusOut(e) {
+      if (!this.$el.contains(e.relatedTarget)) {
+        this.isFocused = false;
+        this.updateControlsVisibility();
+      }
+    },
+    setInitialProgress(videoprogressValue) {
+      this.videoprogress = parseInt(videoprogressValue * this.interval, 10);
+    },
+    onCanPlay() {
+      this.video = this.$refs.videoEl;
+      this.video.setAttribute("id", this.videoid);
+      this.videoReady = true;
+      this.duration = this.video.duration;
+      this.volume = this.video.volume;
+      this.isMuted = this.video.muted;
+      if (this.range && this.range.start > 0) {
+        this.video.currentTime = this.range.start;
+        this.currentTime = this.range.start;
+      }
+      this.$emit('ready', { duration: this.duration });
+    },
+    onTimeUpdate() {
+      if (!this.video) return;
+
+      // Keep the reactive currentTime in sync *before* range clamping,
+      // so the seekbar fill always reflects the video's real position.
+      this.currentTime = this.video.currentTime;
+
+      if (this.range) {
+        if (this.video.currentTime < this.range.start) {
+          this._rangeClamping = true;
+          this.video.currentTime = this.range.start;
+          this.currentTime = this.range.start;
+        }
+        // Guard with !this.hasEnded to break the infinite loop:
+        // setting video.currentTime = range.end fires another timeupdate,
+        // which would re-enter this block and spam pause/ended/playback forever.
+        if (this.range.end != null && this.video.currentTime >= this.range.end && !this.hasEnded) {
+          this._rangeClamping = true;
+          this.video.currentTime = this.range.end;
+          this.currentTime = this.range.end;
+          this.video.pause();
+          this.onEnded();
+          return;
+        }
+      }
+      if (!this.isSeeking) {
+        this.seekStart = this.video.currentTime;
+      }
+      this.$emit('timeupdate', { currentTime: this.currentTime, duration: this.duration });
+    },
+    loop() {
+      if (!this.video) {
+        return;
+      }
+      const curr = this.video.currentTime || 0;
+      const currentinterval = curr > 0 ? Math.round(curr / this.interval) : 0;
+      if (currentinterval !== this.lastposition) {
+        this.logger?.add('playback', {
+          context: 'player',
+          action: 'playback',
+          values: currentinterval,
+          currenttime: this.video.currentTime,
+          duration: this.video.duration,
+        });
+        this.videoprogress += this.interval;
+        this.lastposition = currentinterval;
+      }
+    },
+    onPlay() {
+      this.video = this.$refs.videoEl;
+      this.isPaused = false;
+      this.hasEnded = false;
+      this.logger?.add('play', {
+        context: 'player',
+        action: 'play',
+        values: '',
+        currenttime: this.video ? this.video.currentTime : 0,
+        duration: this.video ? this.video.duration : 0,
+      });
+      if (this.timer) {
+        clearInterval(this.timer);
+      }
+      this.timer = setInterval(this.loop, this.interval * 1000);
+      setTimeout(this.loop, 100);
+    },
+    onPause() {
+      if (!this.video) {
+        return;
+      }
+      this.isPaused = true;
+      this.logger?.add('pause', {
+        context: 'player',
+        action: 'pause',
+        values: '',
+        currenttime: this.video.currentTime,
+        duration: this.video.duration,
+      });
+      clearInterval(this.timer);
+      this.timer = null;
+      this.loop();
+    },
+    onSeeking() {
+      this.isSeeking = true;
+    },
+    seekTo(time, silent = false) {
+      if (this.range) {
+        time = Math.max(this.range.start, time);
+        if (this.range.end != null) {
+          time = Math.min(this.range.end, time);
+        }
+      }
+      if (this.video) {
+        // User-initiated seek means they want to keep watching;
+        // reset the ended state so the replay button reverts to play/pause.
+        this.hasEnded = false;
+        this.video.currentTime = time;
+        this.currentTime = time;
+        if (!silent) {
+          this.logger?.add('timeline-seek', {
+            context: 'player',
+            action: 'timeline-seek',
+            values: time,
+            currenttime: time,
+            duration: this.video.duration,
+          });
+        }
+      }
+    },
+    onError() {
+      this.videoError = true;
+    },
+    onSeeked() {
+      if (!this.video) {
+        return;
+      }
+      // Only clear ended state for user-initiated seeks.
+      // Programmatic range-clamp seeks (from onTimeUpdate) must
+      // let onEnded's hasEnded=true stand so the replay icon appears.
+      if (!this._rangeClamping) {
+        this.hasEnded = false;
+      }
+      this._rangeClamping = false;
+      const from = this.seekStart;
+      const to = this.video.currentTime;
+      const distance = to - from;
+      const direction = distance >= 0 ? "forward" : "backward";
+      this.logger?.add('seeked', {
+        context: 'player',
+        action: 'seeked',
+        values: JSON.stringify({
+          from: from,
+          to: to,
+          distance: distance,
+          direction: direction,
+        }),
+        currenttime: this.video.currentTime,
+        duration: this.video.duration,
+      });
+      this.seekStart = this.video.currentTime;
+      this.isSeeking = false;
+    },
+    onEnded() {
+      if (!this.video) {
+        return;
+      }
+      this.hasEnded = true;
+      this.isPaused = true;
+      this.logger?.add('ended', {
+        context: 'player',
+        action: 'ended',
+        values: '',
+        currenttime: this.video.currentTime,
+        duration: this.video.duration,
+      });
+      clearInterval(this.timer);
+      this.timer = null;
+      this.loop();
+      this.maybeShowSurvey();
+    },
+    handlePlayClick() {
+      if (this.hasEnded) {
+        // Replay from the start of the video (or the start of the range if provided)
+        this.video.currentTime = this.range ? this.range.start : 0;
+        this.video.play();
+      } else if (this.isPaused) {
+        this.video.play();
+      } else {
+        this.video.pause();
+      }
+    },
+    // Global keyboard shortcuts: spacebar for play/pause, left/right arrows for +/-5s seek.
+    onKeydown(e) {
+      if (!this.videoReady || this.videoError) return;
+
+      const tag = document.activeElement?.tagName?.toLowerCase();
+      const isEditable =
+        tag === "input" ||
+        tag === "textarea" ||
+        tag === "select" ||
+        tag === "button" ||
+        document.activeElement?.isContentEditable;
+
+      // Spacebar: play/pause (skip when editable elements are focused)
+      if ((e.key === " " || e.code === "Space") && !isEditable) {
+        e.preventDefault();
+        this.handlePlayClick();
+        return;
+      }
+
+      // Left/Right arrows: seek ±5 seconds (skip when editable elements are focused)
+      if ((e.key === "ArrowLeft" || e.key === "ArrowRight") && !isEditable) {
+        e.preventDefault();
+        const delta = e.key === "ArrowRight" ? 5 : -5;
+        const newTime = this.currentTime + delta;
+        this.seekTo(newTime);
+      }
+    },
+    toggleFullscreen() {
+      const el = this.$el;
+      if (!document.fullscreenElement) {
+        el.requestFullscreen().catch(() => {});
+        this.isFullscreen = true;
+      } else {
+        document.exitFullscreen().catch(() => {});
+        this.isFullscreen = false;
+      }
+    },
+    formatTime(seconds) {
+      if (isNaN(seconds) || seconds === Infinity || seconds === 0) {
+        return "0:00";
+      }
+      const s = Math.floor(seconds);
+      const m = Math.floor(s / 60);
+      const sec = s % 60;
+      return `${m}:${sec.toString().padStart(2, "0")}`;
+    },
+    onFullscreenChange() {
+      this.isFullscreen = !!document.fullscreenElement;
+      this.showSidebar = false;
+      this.logger?.add('fullscreen-change', {
+        context: 'player',
+        action: 'fullscreen-change',
+        values: this.isFullscreen ? 'enter' : 'exit',
+        currenttime: this.video ? this.video.currentTime : 0,
+        duration: this.video ? this.video.duration : 0,
+      });
+    },
+    maybeShowSurvey() {
+      if (!this.enableSurvey) {
+        return;
+      }
+      const storageKey = 'mod_hypervideo_survey_' + this.$store.state.hypervideoid;
+      try {
+        const answered = window.localStorage.getItem(storageKey);
+        if (answered) {
+          return;
+        }
+      } catch (e) {
+        // localStorage unavailable — still show survey
+      }
+      this.showSurvey = true;
+    },
+    onSurveySubmit(rating) {
+      const storageKey = 'mod_hypervideo_survey_' + this.$store.state.hypervideoid;
+      try {
+        window.localStorage.setItem(storageKey, String(rating));
+      } catch (e) {
+        // storage full or unavailable — silently ignore
+      }
+      this.showSurvey = false;
+      this.logger?.add('survey_response', {
+        context: 'media_hypervideo',
+        action: 'survey_response',
+        values: rating,
+        currenttime: 0,
+        duration: 0,
+      });
+    },
+    goToPrevious(source = 'controls') {
+      this.emitButtonSeek(source, 'previous');
+      if (this.onPrevious) {
+        this.onPrevious();
+        // this.playAfterNavigate();
+        return;
+      }
+      // Fallback: navigate to previous chapter internally
+      if (!this.chapters || !this.chapters.length || !this.video) return;
+      const sorted = this.sortedChapters;
+      const currentTime = this.currentTime;
+      let prevChapter = null;
+      for (let i = sorted.length - 1; i >= 0; i--) {
+        if (sorted[i].time < currentTime - 0.5) {
+          prevChapter = sorted[i];
+          break;
+        }
+      }
+      if (prevChapter) {
+        this.video.currentTime = prevChapter.time;
+        this.currentTime = prevChapter.time;
+        this.hasEnded = false;
+      }
+    },
+    goToNext(source = 'controls') {
+      this.emitButtonSeek(source, 'next');
+      if (this.onNext) {
+        this.onNext();
+        // this.playAfterNavigate();
+        return;
+      }
+      // Fallback: navigate to next chapter internally
+      if (!this.chapters || !this.chapters.length || !this.video) return;
+      const sorted = this.sortedChapters;
+      const currentTime = this.currentTime;
+      for (let i = 0; i < sorted.length; i++) {
+        if (sorted[i].time > currentTime + 0.5) {
+          this.video.currentTime = sorted[i].time;
+          this.currentTime = sorted[i].time;
+          this.hasEnded = false;
+          return;
+        }
+      }
+    },
+    emitButtonSeek(source, direction) {
+      if (!this.video) return;
+      this.logger?.add('button-seek', {
+        context: 'player',
+        action: 'button-seek',
+        values: source + '-' + direction,
+        currenttime: this.currentTime,
+        duration: this.video.duration,
+      });
+    },
+    playAfterNavigate() {
+      // After the parent updates the range, hasEnded will be reset by the
+      // range watcher. Auto-play so the next segment starts immediately.
+      this.$nextTick(() => {
+        if (this.video && this.video.paused) {
+          this.video.play().catch(() => {});
+        }
+      });
+    },
+    onVolumeChange(e) {
+      this.logger?.add('volume-change', e);
+    },
+    onMuteChange(e) {
+      this.logger?.add('mute-change', e);
+    },
+    onSpeedChange(e) {
+      this.logger?.add('speed-change', e);
+    },
+    onSurveyDismiss() {
+      this.showSurvey = false;
+    },
+  },
+};
+</script>
+
+<style scoped>
+
+.player-container {
+  width: fit-content;
+  position: relative;
+
+  /* Round corners */
+  border-radius: var(--border-radius);
+  overflow: hidden;
+  background-color: #000;
+}
+
+.hypervideo-error {
+  margin-top: 1rem;
+}
+
+.player-container > video {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.video-controls {
+  /* Positioning */
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+
+  /* Position items */
+  display: flex;
+  gap: 5px;
+  padding: 5px;
+  align-items: center;
+
+  background-color: var(--overlay-bg);
+  backdrop-filter: blur(4px);
+  z-index: 6;
+  transition: opacity 0.3s ease;
+  border-radius: 0 0 var(--border-radius) var(--border-radius);
+}
+
+.current-time, .video-time {
+  font-size: 0.85rem;
+  font-family: monospace;
+  color: #444;
+  min-width: 3.5rem;
+  text-align: center;
+  user-select: none;
+}
+
+/* ---------- Button styles ---------- */
+
+:deep(.btn) {
+  display: flex;
+  background: none;
+  border: none;
+  padding: 5px;
+  color: #444;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 1rem;
+
+  transition: background 0.15s, color 0.15s;
+}
+
+:deep(.btn:hover),
+:deep(.btn:focus-visible) {
+  background: #e9ecef;
+  color: #222;
+}
+
+:deep(.btn:focus-visible) {
+  background: #e9ecef;
+  color: #222;
+  outline: 2px solid #004C97;
+}
+
+:deep(.btn:disabled) {
+  opacity: 0.35;
+  cursor: default;
+}
+
+/* ---------- Controls visibility ---------- */
+
+.controls-hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* ---------- Fullscreen title overlay ---------- */
+
+.fullscreen-title-overlay {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 11;
+  padding: 6px 14px;
+  font-size: 1rem;
+  font-weight: 600;
+  background: var(--overlay-bg);
+  backdrop-filter: blur(6px);
+  border-radius: var(--border-radius);
+  max-width: calc(100% - 80px);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+
+  /* Allow clicking through the element */
+  pointer-events: none;
+}
+
+.fullscreen-title-overlay.title-shifted-left {
+  left: 44px;
+  max-width: calc(100% - 84px);
+}
+
+/* ---------- Fullscreen sidebar ---------- */
+
+.fullscreen-sidebar-wrapper {
+  position: absolute;
+  top: 0;
+  bottom: 44px;
+  z-index: 20;
+  display: flex;
+  transition: opacity 0.3s ease;
+}
+
+.fs-sidebar-right {
+  right: 0;
+  flex-direction: row-reverse;
+}
+
+.fs-sidebar-left {
+  left: 0;
+  flex-direction: row;
+}
+
+.fullscreen-sidebar-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  flex-shrink: 0;
+  background: #fff6;
+  cursor: pointer;
+  transition: background 0.2s;
+  user-select: none;
+}
+
+.fullscreen-sidebar-trigger:hover,
+.fullscreen-sidebar-trigger:focus-visible {
+  background: #fffc;
+}
+
+.fullscreen-sidebar-trigger .material-symbols {
+  font-size: 1.25rem;
+}
+
+.fullscreen-sidebar-content {
+  /* width: 320px; */
+  max-height: 100%;
+  overflow-y: auto;
+  padding: 10px;
+  /* box-shadow: 0 0 20px rgba(0, 0, 0, 0.3); */
+}
+</style>

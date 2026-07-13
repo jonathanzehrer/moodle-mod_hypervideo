@@ -10,6 +10,7 @@
                 <FIELD NAME="name" TYPE="char" LENGTH="255" NOTNULL="true" SEQUENCE="false" />
                 <FIELD NAME="url" TYPE="text" NOTNULL="true" SEQUENCE="false" />
                 <FIELD NAME="chapters" TYPE="text" NOTNULL="false" SEQUENCE="false" />
+                <FIELD NAME="playerstyle" TYPE="char" LENGTH="255" NOTNULL="true" DEFAULT="AppVariant1.vue" SEQUENCE="false" />
                 <FIELD NAME="intro" TYPE="text" NOTNULL="false" SEQUENCE="false" />
                 <FIELD NAME="introformat" TYPE="int" LENGTH="4" NOTNULL="true" DEFAULT="0"
                     SEQUENCE="false" />

@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hypervideo – Standalone Test</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" />
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      margin: 0 auto;
+      padding: 2rem 1rem;
+      background: #f5f5f5;
+      color: #333;
+    }
+    .layout {
+      display: flex;
+      gap: 1.5rem;
+      align-items: flex-start;
+    }
+    .controls {
+      background: #fff;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 1.25rem;
+      width: 600px;
+      flex-shrink: 0;
+    }
+    .controls label { display: block; font-weight: 600; margin: 0.5rem 0 0.25rem; }
+    .controls input, .controls textarea {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 0.5rem;
+      font-size: 0.95rem;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+
+    .controls textarea { font-family: monospace; resize: vertical; }
+    .controls button {
+      margin-top: 0.75rem;
+      padding: 0.6rem 1.5rem;
+      font-size: 1rem;
+      cursor: pointer;
+      border: none;
+      border-radius: 4px;
+      background: #004C97;
+      color: #fff;
+    }
+    .controls button:hover { background: hsl(210, 100%, 35%); }
+    
+    #app {
+      background: #fff;
+      border-radius: 8px;
+      padding: 1rem;
+      flex: 1;
+      min-width: 0;
+    }
+
+  </style>
+</head>
+<body>
+  <h1>Hypervideo – Standalone Test</h1>
+  <p>
+    Use this page to test the video player <strong>without Moodle</strong>.
+    Enter a video URL below and click <em>Load Player</em>.
+  </p>
+
+  <div class="layout">
+  <div class="controls">
+    <label for="vid-url">Video URL (MP4 / WebM)</label>
+    <input id="vid-url" type="text" value="/test-video.mp4" />
+
+    <div>
+      <label for="vid-title">Title</label>
+      <input id="vid-title" type="text" value="Big Buck Bunny" placeholder="My Video" />
+    </div>
+    <div>
+      <label for="vid-hypervideoid">Hypervideo ID</label>
+      <input id="vid-hypervideoid" type="number" value="1" min="1" />
+    </div>
+    <div>
+      <label for="vid-userid">Moodle User ID</label>
+      <input id="vid-userid" type="number" value="1" min="0" />
+    </div>
+    <div>
+      <label for="vid-variant">Override Variant</label>
+      <select id="vid-variant">
+        <option value="auto">Auto (hypervideo + user id)</option>
+        <option value="1">Variant 1 (blue)</option>
+        <option value="2">Variant 2 (green)</option>
+        <option value="3">Variant 3 (amber)</option>
+      </select>
+    </div>
+
+    <label for="vid-chapters">
+      Chapters (one per line, format: <code>mm:ss Title</code> or <code>h:mm:ss Title</code>)
+    </label>
+    <textarea id="vid-chapters" rows="4">0:00 Introduction&#10;0:10 Main topic&#10;0:20 Conclusion</textarea>
+
+    <button id="btn-load">▶ Load Player</button>
+    <button id="btn-destroy" style="background:#888;margin-left:0.5rem;">✕ Destroy</button>
+  </div>
+
+  <div id="app"></div>
+  </div>
+
+  <script>
+    // Must run before any module loads: main.js references M.cfg.wwwroot at top level.
+    window.M = { cfg: { wwwroot: "" } };
+  </script>
+  <script type="module">
+    import { init } from "./src/main.js";
+
+    const btn = document.getElementById("btn-load");
+    const btnDestroy = document.getElementById("btn-destroy");
+    const appContainer = document.getElementById("app");
+
+    btn.addEventListener("click", async () => {
+      const url = document.getElementById("vid-url").value.trim();
+      const title = document.getElementById("vid-title").value.trim();
+      const chaptersRaw = document.getElementById("vid-chapters").value.trim();
+
+      if (!url) {
+        alert("Please enter a video URL.");
+        return;
+      }
+
+      // Parse chapters (mirrors view.php logic).
+      const chapters = [];
+      if (chaptersRaw) {
+        chaptersRaw.split(/\r?\n/).forEach((line) => {
+          line = line.trim();
+          if (!line) return;
+          const match = line.match(/^(\d{1,2}(?::\d{2}){1,2})\s+(.+)$/);
+          if (match) {
+            const parts = match[1].split(":").map(Number);
+            let seconds;
+            if (parts.length === 3) {
+              seconds = parts[0] * 3600 + parts[1] * 60 + parts[2];
+            } else {
+              seconds = parts[0] * 60 + parts[1];
+            }
+            chapters.push({ time: seconds, title: match[2] });
+          }
+        });
+      }
+
+      // Reset the app container and re-mount.
+      appContainer.innerHTML = '<div id="app"></div>';
+
+      const i18nStrings = {
+        aria_videoplayer: "Video player",
+        aria_videonotsupported:
+          "Your browser does not support embedded video. Please update your browser or use a different one.",
+        player_error: "The video could not be loaded. Please check the URL or try again later.",
+        player_loading: "Loading video...",
+        player_videonotavailable: "Video not available",
+        back_to_overview: "Back to overview",
+        chapters_goto: "Jump to",
+        chapters_nav: "Video chapters",
+        chapters_title: "Chapters",
+        currentTime: "Current time",
+        duration: "Duration",
+        exit_fullscreen: "Exit fullscreen",
+        fullscreen: "Fullscreen",
+        mute: "Mute",
+        next_chapter: "Next chapter",
+        next_video: "Next video",
+        pause: "Pause",
+        play: "Play",
+        playback_speed: "Playback speed",
+        previous_chapter: "Previous chapter",
+        previous_video: "Previous video",
+        rewatch: "Replay",
+        unmute: "Unmute",
+        volume: "Volume",
+        survey_question: "I found the video to be well structured",
+        survey_label_1: "Strongly disagree",
+        survey_label_2: "Disagree",
+        survey_label_3: "Neutral",
+        survey_label_4: "Agree",
+        survey_label_5: "Strongly agree",
+        survey_submit: "Submit feedback",
+      };
+
+      const variantOverride = document.getElementById("vid-variant").value;
+      const hypervideoid = parseInt(document.getElementById("vid-hypervideoid").value, 10) || 1;
+      const userid = parseInt(document.getElementById("vid-userid").value, 10) || 0;
+
+      let effectiveUserid = userid;
+      if (variantOverride !== "auto") {
+        // Force a specific variant by adjusting the user id so the hash lands on it.
+        const target = parseInt(variantOverride, 10) - 1; // 0, 1, or 2
+        effectiveUserid = ((target - (hypervideoid % 3)) + 3) % 3;
+      }
+
+      await init(
+        1,                 // coursemoduleid (fake)
+        1,                 // contextid (fake)
+        1,                 // courseid (fake)
+        hypervideoid,      // hypervideoid
+        "mod_hypervideo",  // fullPluginName
+        url,
+        title,
+        { chapters, i18nStrings, lang: "en" },
+        effectiveUserid,
+      );
+
+      console.log("✅ Player loaded. Edit Vue files → HMR updates automatically.");
+    });
+
+    btnDestroy.addEventListener("click", () => {
+      appContainer.innerHTML = '<div id="app"></div>';
+      console.log("🗑 Player destroyed. Click 'Load Player' to restart.");
+    });
+  </script>
+</body>
+</html>

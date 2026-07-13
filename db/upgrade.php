@@ -56,5 +56,16 @@ function xmldb_hypervideo_upgrade($oldversion = 0) {
         upgrade_plugin_savepoint(true, 2026032401, 'mod', 'hypervideo');
     }
 
+    if ($oldversion < 2026070101) {
+        $table = new xmldb_table('hypervideo');
+        $field = new xmldb_field('playerstyle', XMLDB_TYPE_CHAR, '255', null, XMLDB_NOTNULL, null, 'AppVariant1.vue', 'chapters');
+
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+
+        upgrade_plugin_savepoint(true, 2026070101, 'mod', 'hypervideo');
+    }
+
     return true;
 }

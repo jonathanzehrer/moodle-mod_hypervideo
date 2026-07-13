@@ -82,6 +82,10 @@ if (!empty($hypervideo->chapters)) {
             $chapters[] = ['time' => $seconds, 'title' => clean_param($m[2], PARAM_TEXT)];
         }
     }
+    // Sort chapters by time in case they were defined out of order.
+    usort($chapters, function($a, $b) {
+        return $a['time'] - $b['time'];
+    });
 }
 
 $initialdata = [
@@ -102,6 +106,8 @@ $PAGE->requires->js_call_amd('mod_hypervideo/app-lazy', 'init', [
     $hypervideo->url,
     format_string($hypervideo->name),
     $initialdata,
+    $USER->id,
+    $hypervideo->playerstyle ?? 'AppVariant1.vue',
 ]);
 
 echo $OUTPUT->footer();
